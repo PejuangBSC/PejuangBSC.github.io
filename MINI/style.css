@@ -44,7 +44,7 @@
   --radius-xs: 7px;
   --shadow: 0 4px 20px rgba(100, 130, 180, 0.10);
   --shadow-lg: 0 8px 40px rgba(100, 130, 180, 0.18);
-  --nav-h: 62px;
+  --nav-h: 40px;
   --fab-h: 42px;
   --topbar-h: 106px;
   /* 54 topbar + ~44 signal chips + 8 gap */
@@ -958,10 +958,26 @@ body {
 .hdr-dex-modal {
   display: block;
   font-size: 9px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
+  font-weight: 700;
   white-space: nowrap;
-  line-height: 1.3;
+  line-height: 1.4;
+}
+
+/* Modal cukup — putih normal */
+.hdr-modal-ok {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 9px;
+}
+
+/* Modal tidak cukup: set amount merah, actual hijau */
+.hdr-modal-set {
+  color: #0c0c0c;
+  font-size: 9px;
+}
+
+.hdr-modal-act {
+  color: #fefefe;
+  font-size: 9px;
 }
 
 .mon-sub-table tbody tr {
@@ -1082,7 +1098,7 @@ mc-pnl {
 }
 
 .scan-sort-group .sort-btn {
-  height: 32px;
+  height: 25px;
   min-width: 36px;
   padding: 0 10px;
   font-size: 11px;
@@ -1119,7 +1135,7 @@ body.is-scanning .scan-sort-group {
 }
 
 .fab-scan {
-  height: 32px;
+  height: 25px;
   padding: 0 18px;
   border-radius: 16px;
   background: #365cd3;

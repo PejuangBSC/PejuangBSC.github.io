@@ -288,7 +288,7 @@ async function scanToken(tok) {
 
     const allCtD = [];
     if (!blockCtD) {
-        const _pCtD = (r, dk) => { r.dexModalCtD = CFG.dex?.[dk]?.modalCtD; r.modalFull = dxCtD[dk].full; r.dexMinPnl = CFG.dex?.[dk]?.minPnl ?? tokMinPnl; allCtD.push(r); };
+        const _pCtD = (r, dk) => { r.dexModalCtD = CFG.dex?.[dk]?.modalCtD; r.modalFull = dxCtD[dk].full; r.modalActual = Math.round(dxCtD[dk].modal); r.dexMinPnl = CFG.dex?.[dk]?.minPnl ?? tokMinPnl; allCtD.push(r); };
         mxCtD.forEach(q => { const p = _parseMx(q); if (p) _pCtD(computeQuotePnl(p, pairDec, bidPair, dxCtD.metax.modal, tok.cex, dxCtD.metax.price, 'ctd', feeWdCtD, isPairStable, chainGasFee), 'metax'); });
         jxCtD.forEach(q => { const p = _parseJx(q); if (p) _pCtD(computeQuotePnl(p, pairDec, bidPair, dxCtD.jumpx.modal, tok.cex, dxCtD.jumpx.price, 'ctd', feeWdCtD, isPairStable, chainGasFee), 'jumpx'); });
         kbCtD.forEach(q => { const p = _normQ(q); if (p) _pCtD(computeQuotePnl(p, pairDec, bidPair, dxCtD.kyber.modal, tok.cex, dxCtD.kyber.price, 'ctd', feeWdCtD, isPairStable, chainGasFee), 'kyber'); });
@@ -302,7 +302,7 @@ async function scanToken(tok) {
     // 6. Combine & sort DTC quotes — skip jika DP token ditutup (blockDtC)
     const allDtC = [];
     if (!blockDtC) {
-        const _pDtC = (r, dk) => { r.dexModalDtC = CFG.dex?.[dk]?.modalDtC; r.modalFull = dxDtC[dk].full; r.dexMinPnl = CFG.dex?.[dk]?.minPnl ?? tokMinPnl; allDtC.push(r); };
+        const _pDtC = (r, dk) => { r.dexModalDtC = CFG.dex?.[dk]?.modalDtC; r.modalFull = dxDtC[dk].full; r.modalActual = Math.round(dxDtC[dk].modal); r.dexMinPnl = CFG.dex?.[dk]?.minPnl ?? tokMinPnl; allDtC.push(r); };
         mxDtC.forEach(q => { const p = _parseMx(q); if (p) _pDtC(computeQuotePnl(p, tok.decToken, dxDtC.metax.price, dxDtC.metax.modal, tok.cex, dxCtD.metax.price, 'dtc', 0, isPairStable, chainGasFee), 'metax'); });
         jxDtC.forEach(q => { const p = _parseJx(q); if (p) _pDtC(computeQuotePnl(p, tok.decToken, dxDtC.jumpx.price, dxDtC.jumpx.modal, tok.cex, dxCtD.jumpx.price, 'dtc', 0, isPairStable, chainGasFee), 'jumpx'); });
         kbDtC.forEach(q => { const p = _normQ(q); if (p) _pDtC(computeQuotePnl(p, tok.decToken, dxDtC.kyber.price, dxDtC.kyber.modal, tok.cex, dxCtD.kyber.price, 'dtc', 0, isPairStable, chainGasFee), 'kyber'); });
@@ -361,9 +361,12 @@ async function scanToken(tok) {
             const sigCls = isSignal ? ' col-signal' : '';
             const ctdName = (r.name || '').slice(0, 6).toUpperCase();
             const ctdSrcTag = r.src === 'MX' ? '<span class="src-tag mx">MT</span>' : r.src === 'JX' ? '<span class="src-tag jx">JM</span>' : r.src === 'BG' ? '<span class="src-tag bg">BG</span>' : '';
-            const ctdModalLbl = r.dexModalCtD ? `[$${r.dexModalCtD}]` : '';
-            const ctdAlBadge  = r.modalFull === false ? '❌' : '✅';
-            if (hdrEl) { hdrEl.innerHTML = ctdName + (ctdSrcTag ? ' ' + ctdSrcTag : '') + (ctdModalLbl ? `<span class="hdr-dex-modal">${ctdModalLbl} ${ctdAlBadge}</span>` : ''); hdrEl.className = 'mon-dex-hdr'; hdrEl.dataset.effprice = r.effPrice; hdrEl.dataset.cexFee1 = r.cexFee1.toFixed(4); hdrEl.dataset.cexFee2 = r.cexFee2.toFixed(4); hdrEl.dataset.feeWd = r.wdFee.toFixed(4); hdrEl.dataset.feeSwap = (r.feeSwap || 0).toFixed(6); hdrEl.dataset.totalFee = r.totalFee.toFixed(6); hdrEl.dataset.pnlKotor = (r.pnlKotor || 0).toFixed(4); hdrEl.dataset.pnlBersih = r.pnl.toFixed(4); }
+            const ctdModalSet = r.dexModalCtD;
+            const ctdInsuf    = r.modalFull === false && r.modalActual && ctdModalSet && r.modalActual < ctdModalSet;
+            const ctdModalLbl = ctdInsuf
+                ? `<span class="hdr-modal-set">$${ctdModalSet}</span> | <span class="hdr-modal-act">$${r.modalActual}✅</span>`
+                : (ctdModalSet ? `<span class="hdr-modal-ok">$${ctdModalSet}✅</span>` : '');
+            if (hdrEl) { hdrEl.innerHTML = ctdName + (ctdSrcTag ? ' ' + ctdSrcTag : '') + (ctdModalLbl ? `<span class="hdr-dex-modal">${ctdModalLbl}</span>` : ''); hdrEl.className = 'mon-dex-hdr'; hdrEl.dataset.effprice = r.effPrice; hdrEl.dataset.cexFee1 = r.cexFee1.toFixed(4); hdrEl.dataset.cexFee2 = r.cexFee2.toFixed(4); hdrEl.dataset.feeWd = r.wdFee.toFixed(4); hdrEl.dataset.feeSwap = (r.feeSwap || 0).toFixed(6); hdrEl.dataset.totalFee = r.totalFee.toFixed(6); hdrEl.dataset.pnlKotor = (r.pnlKotor || 0).toFixed(4); hdrEl.dataset.pnlBersih = r.pnl.toFixed(4); }
             if (cexEl) { cexEl.innerHTML = _cexPriceHtml(`↑ ${fmtCompact(dispAskCtD)}$`, _tradeUrl); cexEl.className = 'mon-dex-cell mc-ask' + sigCls; }
             if (dexEl) { dexEl.innerHTML = _dexPriceHtml(`↓ ${fmtCompact(r.effPrice)}$`, r.name, 'ctd'); dexEl.className = 'mon-dex-cell mc-bid' + sigCls; }
             if (feeEl) { feeEl.textContent = _fmtFeeCell(r.wdFee, r.cexFee1 + r.cexFee2, r.feeSwap || 0); feeEl.className = 'mon-dex-cell mc-recv' + sigCls; }
@@ -427,9 +430,12 @@ async function scanToken(tok) {
             const sigCls = isSignal ? ' col-signal' : '';
             const dtcName = (r.name || '').slice(0, 6).toUpperCase();
             const dtcSrcTag = r.src === 'MX' ? '<span class="src-tag mx">MT</span>' : r.src === 'JX' ? '<span class="src-tag jx">JM</span>' : r.src === 'BG' ? '<span class="src-tag bg">BG</span>' : '';
-            const dtcModalLbl = r.dexModalDtC ? `[$${r.dexModalDtC}]` : '';
-            const dtcAlBadge  = r.modalFull === false ? '❌' : '✅';
-            if (hdrEl) { hdrEl.innerHTML = dtcName + (dtcSrcTag ? ' ' + dtcSrcTag : '') + (dtcModalLbl ? `<span class="hdr-dex-modal">${dtcModalLbl} ${dtcAlBadge}</span>` : ''); hdrEl.className = 'mon-dex-hdr'; hdrEl.dataset.effprice = r.effPrice; hdrEl.dataset.cexFee1 = r.cexFee1.toFixed(4); hdrEl.dataset.cexFee2 = r.cexFee2.toFixed(4); hdrEl.dataset.feeWd = r.wdFee.toFixed(4); hdrEl.dataset.feeSwap = (r.feeSwap || 0).toFixed(6); hdrEl.dataset.totalFee = r.totalFee.toFixed(6); hdrEl.dataset.pnlKotor = (r.pnlKotor || 0).toFixed(4); hdrEl.dataset.pnlBersih = r.pnl.toFixed(4); }
+            const dtcModalSet = r.dexModalDtC;
+            const dtcInsuf    = r.modalFull === false && r.modalActual && dtcModalSet && r.modalActual < dtcModalSet;
+            const dtcModalLbl = dtcInsuf
+                ? `<span class="hdr-modal-set">$${dtcModalSet}</span> | <span class="hdr-modal-act">$${r.modalActual}✅</span>`
+                : (dtcModalSet ? `<span class="hdr-modal-ok">$${dtcModalSet}✅</span>` : '');
+            if (hdrEl) { hdrEl.innerHTML = dtcName + (dtcSrcTag ? ' ' + dtcSrcTag : '') + (dtcModalLbl ? `<span class="hdr-dex-modal">${dtcModalLbl}</span>` : ''); hdrEl.className = 'mon-dex-hdr'; hdrEl.dataset.effprice = r.effPrice; hdrEl.dataset.cexFee1 = r.cexFee1.toFixed(4); hdrEl.dataset.cexFee2 = r.cexFee2.toFixed(4); hdrEl.dataset.feeWd = r.wdFee.toFixed(4); hdrEl.dataset.feeSwap = (r.feeSwap || 0).toFixed(6); hdrEl.dataset.totalFee = r.totalFee.toFixed(6); hdrEl.dataset.pnlKotor = (r.pnlKotor || 0).toFixed(4); hdrEl.dataset.pnlBersih = r.pnl.toFixed(4); }
             if (cexEl) { cexEl.innerHTML = _cexPriceHtml(`↓ ${fmtCompact(dispBidDtC)}$`, _tradeUrl); cexEl.className = 'mon-dex-cell mc-bid' + sigCls; }
             if (dexEl) { dexEl.innerHTML = _dexPriceHtml(`↑ ${fmtCompact(r.effPrice)}$`, r.name, 'dtc'); dexEl.className = 'mon-dex-cell mc-ask' + sigCls; }
             if (feeEl) { feeEl.textContent = _fmtFeeCell(r.wdFee, r.cexFee1 + r.cexFee2, r.feeSwap || 0); feeEl.className = 'mon-dex-cell mc-recv' + sigCls; }
