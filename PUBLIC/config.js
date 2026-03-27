@@ -1,13 +1,13 @@
 const CONFIG_APP = {
     APP: {
-        NAME: "MONITORING HARGA",
+        NAME: "SELISIH HARGA",
         // NAME: "WATCHMARKET",
         // NAME: "APP PRIVATE",
         VERSION: "2026.03.30",
         SCAN_LIMIT: true,
         AUTORUN: false,
-        AUTO_VOLUME: false,  // cek volume otomatis untuk filter dan alert
-        VOL_CHECK: true, // cek volume aktual
+        AUTO_VOLUME: true,  // cek volume otomatis untuk filter dan alert
+        VOL_CHECK: false, // cek volume aktual
         DEBUG_LOG: false,
         // META-DEX: fitur DEX TAMBAHAN yang menampilkan BANYAK quote sekaligus per token.
         // Berbeda dari DEX regular (single-quote). Berjalan TERPISAH dari scan DEX regular.
@@ -31,10 +31,10 @@ const CONFIG_APP = {
         // Daftar aggregator META-DEX yang tersedia.
         // Setiap aggregator mengembalikan BANYAK quote dari berbagai DEX sekaligus.
         aggregators: {
-            lifi: { enabled: true, evmOnly: false, jedaDex: 600, label: 'JUMPER' },       // EVM + Solana multi-route
+            //lifi: { enabled: true, evmOnly: false, jedaDex: 600, label: 'JUMPER' },       // EVM + Solana multi-route
             // dzap: { enabled: true, evmOnly: false, jedaDex: 500, label: 'DZAP' },       // EVM + Solana multi-route
             // rubic: { enabled: true, evmOnly: false, jedaDex: 500, label: 'Rubic' },     // EVM + Solana multi-quote
-            rango: { enabled: true, evmOnly: false, jedaDex: 500, label: 'RANGO' },       // EVM + Solana multi-quote
+           // rango: { enabled: true, evmOnly: false, jedaDex: 500, label: 'RANGO' },       // EVM + Solana multi-quote
             //rocketx: { enabled: true, evmOnly: false, jedaDex: 600, label: 'ROCKET' },    // EVM + Solana multi-quote
             metax: { enabled: true, evmOnly: true, jedaDex: 800, label: 'METAX' },        // EVM only (no Solana support)
         },
@@ -877,25 +877,25 @@ const CONFIG_DEXS = {
         allowFallback: true, // ✅ Enable rotation between primary and alternative
     },
 
-    relay: {
-        label: 'Relay',
-        badgeClass: 'bg-relay',
-        disabled: false, // ✅ ENABLED - Cross-chain bridge & swap aggregator
-        warna: "#160783ff",  // Purple - Relay brand color
-        builder: ({ chainName, chainCode, tokenAddress, pairAddress }) =>
-            `https://relay.link/bridge/${String(chainName || '').toLowerCase()}?fromChainId=${chainCode}&fromCurrency=${tokenAddress}&toCurrency=${pairAddress}`,
-        fetchdex: {
-            primary: {
-                tokentopair: 'relay',          // CEX→DEX: Direct Relay API
-                pairtotoken: 'relay'           // DEX→CEX: Direct Relay API
-            },
-            alternative: {
-                tokentopair: 'relay',     // CEX→DEX: LIFI filtered (rotation)
-                pairtotoken: 'relay'      // DEX→CEX: LIFI filtered (rotation)
-            }
-        },
-        allowFallback: false,  // ✅ Enable rotation between primary and alternative
-    },
+    // relay: {
+    //     label: 'Relay',
+    //     badgeClass: 'bg-relay',
+    //     disabled: false, // ✅ ENABLED - Cross-chain bridge & swap aggregator
+    //     warna: "#160783ff",  // Purple - Relay brand color
+    //     builder: ({ chainName, chainCode, tokenAddress, pairAddress }) =>
+    //         `https://relay.link/bridge/${String(chainName || '').toLowerCase()}?fromChainId=${chainCode}&fromCurrency=${tokenAddress}&toCurrency=${pairAddress}`,
+    //     fetchdex: {
+    //         primary: {
+    //             tokentopair: 'relay',          // CEX→DEX: Direct Relay API
+    //             pairtotoken: 'relay'           // DEX→CEX: Direct Relay API
+    //         },
+    //         alternative: {
+    //             tokentopair: 'relay',     // CEX→DEX: LIFI filtered (rotation)
+    //             pairtotoken: 'relay'      // DEX→CEX: LIFI filtered (rotation)
+    //         }
+    //     },
+    //     allowFallback: false,  // ✅ Enable rotation between primary and alternative
+    // },
     flytrade: {
         label: 'Flytrade',
         badgeClass: 'bg-flytrade',
