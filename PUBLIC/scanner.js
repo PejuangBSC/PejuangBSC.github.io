@@ -282,46 +282,12 @@ async function startScanner(tokensToScan, settings, tableBodyId) {
     }
     $('#autoRunCountdown').text('');
 
-    // ✅ CRITICAL: Set window.SavedSettingData EARLY so get0xApiKey() can read from it
-    // This must happen BEFORE API key validation
+    // ✅ Set window.SavedSettingData EARLY for other modules to access
     window.SavedSettingData = settings;
 
-    // ✅ VALIDATE: Check Matcha API keys before starting scan
-    try {
-        // First check directly from settings parameter (most reliable)
-        let testKey = settings?.matchaApiKeys;
-
-        // Fallback to get0xApiKey() function if direct access fails
-        if (!testKey && typeof get0xApiKey === 'function') {
-            testKey = get0xApiKey();
-        }
-        if (!testKey || testKey === null) {
-            // No API keys found - block scan and show error
-            if (typeof UIkit !== 'undefined' && UIkit.notification) {
-                UIkit.notification({
-                    message: '⚠️ MATCHA API KEYS WAJIB DIISI!<br><br>' +
-                        'Aplikasi tidak dapat scan tanpa API key.<br>' +
-                        'Silakan tambahkan di menu Settings.<br><br>' +
-                        'Get API keys from: <a href="https://dashboard.0x.org" target="_blank">dashboard.0x.org</a>',
-                    status: 'danger',
-                    timeout: 8000
-                });
-            } else if (typeof toast !== 'undefined' && toast.error) {
-                toast.error('⚠️ MATCHA API KEYS WAJIB DIISI! Tambahkan di Settings.', null, { duration: 5000 });
-            }
-
-            console.error('[SCANNER] ⚠️ Cannot start scan - No Matcha API keys configured!');
-            console.error('[SCANNER] Get API keys from: https://dashboard.0x.org');
-
-            // Highlight settings button
-            $('#SettingConfig').addClass('icon-wrapper');
-
-            return; // Exit - don't start scan
-        }
-        console.log('[SCANNER] ✅ Matcha API keys validated - scan can proceed');
-    } catch (error) {
-        console.error('[SCANNER] Error validating Matcha API keys:', error);
-    }
+    // ℹ️ Matcha API key validation REMOVED:
+    // - Solana Matcha: Uses direct endpoint (matcha.xyz/api/swap/quote/solana) - NO API key needed
+    // - EVM Matcha: Uses proxy strategies (delta-matcha, c98-matcha, rainbow-matcha, rabby-matcha) - NO API key needed
 
     // Ambil konfigurasi scan dari argumen.
     const ConfigScan = settings;

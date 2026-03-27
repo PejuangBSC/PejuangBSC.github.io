@@ -428,111 +428,26 @@ function getRandomApiKeyRango() {
     return key;
 }
 
+
 // =============================
 // DEX API Keys (Centralized)
 // =============================
-// All DEX API keys stored in one place for better security and management
-
-// 0x (Matcha) API Keys Pool - NO DEFAULT KEYS (User must provide their own)
-// Endpoint: https://api.0x.org/swap/allowance-handler/quote
-// Headers: 0x-api-key, 0x-version: v2
-// Get from: https://dashboard.0x.org
-// ⚠️ Default keys removed - user MUST input API keys in settings
-
-// Helper function for user API key rotation
-let zeroxKeyIndex = 0;
-function rotateUserApiKey0x(keys) {
-    if (!Array.isArray(keys) || keys.length === 0) {
-        return null;
-    }
-    const key = keys[zeroxKeyIndex % keys.length];
-    zeroxKeyIndex = (zeroxKeyIndex + 1) % keys.length;
-    return key;
-}
-
-const DEX_API_KEYS = {
-    // 0x (Matcha) API Key - Handled by get0xApiKey() with rotation
-    // Use get0xApiKey() to get rotating keys from pool
-};
+// ℹ️ Matcha/0x API keys REMOVED — EVM Matcha now uses proxy strategies
+// (delta-matcha, c98-matcha, rainbow-matcha, rabby-matcha)
+// Solana Matcha uses direct endpoint without API key
 
 // =============================
 // Swing Project IDs
 // =============================
-// IMPORTANT: Custom project IDs must be configured at https://platform.swing.xyz/
-// Each project must enable the chains you want to use (BSC, Ethereum, Polygon, etc.)
-// Error "bsc is not a valid chain or is disabled by this project" means the project
-// hasn't enabled that chain in the Swing dashboard settings.
-//
 // Using only 'galaxy-exchange' (demo project) - pre-configured for all chains
 const SWING_PROJECT_IDS = [
     'galaxy-exchange'  // ✅ Public demo project - all chains enabled
-
-    // ❌ Custom project IDs disabled - not configured for all chains:
-    // 'swing-62370183-4923-4b32-8806-c8729d4d6a2d',  // percobaan1 - BSC disabled
-    // 'swing-11f7b12d-4624-4805-8a6c-7ce40a111ec7',  // percobaan1a - BSC disabled
-    // 'swing-381b973d-adce-4c6b-8005-4347bab98543',  // percobaan1b - BSC disabled
-    // 'swing-a2646b38-c907-443b-9440-2830683e2cf6',  // percobaan2 - BSC disabled
-    // 'swing-b7e3b703-224b-4cc9-897d-7a963602fc33',  // percobaan2a - BSC disabled
-    // 'swing-067ad581-1328-42df-bd35-29e1c3b888ed'   // percobaan2b - BSC disabled
 ];
 
 // Helper function to get random Swing project ID
 function getRandomSwingProjectId() {
     const idx = Math.floor(Math.random() * SWING_PROJECT_IDS.length);
     return SWING_PROJECT_IDS[idx];
-}
-
-// Helper function to get 0x API key (with rotation)
-// ⚠️ NO DEFAULT KEYS - User MUST provide API keys in settings
-// Supports multiple keys (comma-separated) with automatic rotation
-function get0xApiKey() {
-    try {
-        let userInput = null;
-
-        // 1. Try from window.SavedSettingData (in-memory cache)
-        if (typeof SavedSettingData !== 'undefined' && SavedSettingData && SavedSettingData.matchaApiKeys) {
-            userInput = SavedSettingData.matchaApiKeys;
-            console.log('[0x API] Reading keys from SavedSettingData (cached)');
-        }
-        // 2. Fallback: Read directly from IndexedDB/localStorage
-        else if (typeof getFromLocalStorage === 'function') {
-            const settings = getFromLocalStorage('SETTING_SCANNER', {});
-            if (settings && settings.matchaApiKeys) {
-                userInput = settings.matchaApiKeys;
-                console.log('[0x API] Reading keys from IndexedDB (direct read)');
-            }
-        }
-
-        if (!userInput) {
-            // No user keys found - return null (scanner will handle error)
-            console.error('[0x API] ⚠️ No API keys found! User must provide Matcha API keys in settings.');
-            console.error('[0x API] Get API keys from: https://dashboard.0x.org');
-            return null;
-        }
-
-        // Support both array and string (comma-separated)
-        let keys = [];
-        if (Array.isArray(userInput)) {
-            keys = userInput.filter(k => k && String(k).trim() !== '');
-        } else if (typeof userInput === 'string') {
-            keys = userInput.split(',')
-                .map(k => String(k).trim())
-                .filter(k => k !== '');
-        }
-
-        if (keys.length > 0) {
-            const rotatedKey = rotateUserApiKey0x(keys);
-            console.log(`[0x API] ✅ Using user API key (key ${zeroxKeyIndex}/${keys.length} total keys)`);
-            return rotatedKey;
-        }
-
-        // Empty keys array
-        console.error('[0x API] ⚠️ matchaApiKeys field exists but contains no valid keys!');
-        return null;
-    } catch (error) {
-        console.error('[0x API] Error getting API key:', error);
-        return null;
-    }
 }
 
 try {
@@ -543,9 +458,6 @@ try {
         window.getRandomApiKeyRocketX = window.getRandomApiKeyRocketX || getRandomApiKeyRocketX;
         window.apiKeysRango = window.apiKeysRango || apiKeysRango;
         window.getRandomApiKeyRango = window.getRandomApiKeyRango || getRandomApiKeyRango;
-        window.rotateUserApiKey0x = window.rotateUserApiKey0x || rotateUserApiKey0x;  // ✅ User key rotation
-        window.DEX_API_KEYS = window.DEX_API_KEYS || DEX_API_KEYS;
-        window.get0xApiKey = window.get0xApiKey || get0xApiKey;
         window.SWING_PROJECT_IDS = window.SWING_PROJECT_IDS || SWING_PROJECT_IDS;
         window.getRandomSwingProjectId = window.getRandomSwingProjectId || getRandomSwingProjectId;
     }

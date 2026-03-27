@@ -1,6 +1,6 @@
 const CONFIG_APP = {
     APP: {
-        NAME: "SELISIH HARGA",
+        NAME: "PENCARI-SELISIH",
         // NAME: "WATCHMARKET",
         // NAME: "APP PRIVATE",
         VERSION: "2026.03.30",

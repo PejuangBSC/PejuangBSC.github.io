@@ -56,18 +56,7 @@
         const jedaKoin = parseInt($('#jeda-koin').val(), 10);
         const walletMeta = $('#walletMeta').val().trim();
 
-        // ✅ Parse Matcha API keys (support comma and newline separated)
-        const matchaApiKeysRaw = $('#matchaApiKeys').val().trim();
-        console.log('[SETTINGS] Raw Matcha API Keys:', matchaApiKeysRaw);
 
-        const matchaApiKeys = matchaApiKeysRaw
-            .split(/[\n,]+/)  // Split by newline or comma
-            .map(k => k.trim())
-            .filter(k => k !== '')
-            .join(',');  // Store as comma-separated string
-
-        console.log('[SETTINGS] Parsed Matcha API Keys:', matchaApiKeys);
-        console.log('[SETTINGS] Keys count:', matchaApiKeys.split(',').filter(k => k).length);
 
         const scanPerKoin = $('input[name="koin-group"]:checked').val();
 
@@ -78,14 +67,7 @@
         if (!jedaKoin || jedaKoin <= 0) return UIkit.notification({ message: 'Jeda / Koin harus lebih dari 0!', status: 'danger' });
         if (!walletMeta || !walletMeta.startsWith('0x')) return UIkit.notification({ message: 'Wallet Address harus valid!', status: 'danger' });
 
-        // ✅ VALIDATE: Matcha API keys WAJIB diisi
-        if (!matchaApiKeys || matchaApiKeys === '') {
-            return UIkit.notification({
-                message: '⚠️ Matcha API Keys WAJIB diisi! Get from https://dashboard.0x.org',
-                status: 'danger',
-                timeout: 5000
-            });
-        }
+
 
         // ✅ Collect DEX delay values (ONLY from generated inputs, NO HARDCODE!)
         let JedaDexs = {};
@@ -315,7 +297,6 @@
 
         const settingData = {
             nickname, jedaTimeGroup, jedaKoin, walletMeta,
-            matchaApiKeys,
             scanPerKoin: parseInt(scanPerKoin, 10),
             JedaDexs,
             metaDex,      // ✅ META-DEX per-aggregator settings
@@ -324,7 +305,6 @@
         };
 
         console.log('[SETTINGS] Data to save:', settingData);
-        console.log('[SETTINGS] matchaApiKeys in data:', settingData.matchaApiKeys);
 
         saveToLocalStorage('SETTING_SCANNER', settingData);
 

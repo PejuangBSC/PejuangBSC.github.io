@@ -149,36 +149,8 @@
   // Expose to window for external access
   root.getStrategyTimeout = getStrategyTimeout;
 
-  // ============================================================================
-  // 0x API CONFIGURATION
-  // ============================================================================
-  /**
-   * 0x API (Matcha) Configuration
-   * Official documentation: https://0x.org/docs/api
-   *
-   * Get your API key from: https://dashboard.0x.org
-   *
-   * The API key should be stored in SavedSettingData.apiKey0x or as fallback
-   */
-  function get0xApiKey() {
-    try {
-      // ✅ SINGLE SOURCE OF TRUTH: Use window.get0xApiKey from secrets.js
-      // This function handles both SavedSettingData and IndexedDB fallback
-      if (typeof root.get0xApiKey === 'function') {
-        const apiKey = root.get0xApiKey();
-        if (apiKey) {
-          return apiKey;
-        }
-      }
 
-      // If secrets.js function not available, return null
-      console.warn('[0x API] get0xApiKey() from secrets.js not available');
-      return null;
-    } catch (error) {
-      console.error('[0x API] Error getting API key:', error);
-      return null;
-    }
-  }
+
 
   const dexStrategies = {
     kyber: {
@@ -551,39 +523,11 @@
         }
 
         // ========== EVM CHAINS ==========
-        const userAddr = SavedSettingData?.walletMeta || '0x0000000000000000000000000000000000000000';
-
-        // Get 0x API key
-        const apiKey = get0xApiKey();
-        if (!apiKey) {
-          throw new Error('0x API key required. Get one from https://dashboard.0x.org');
-        }
-
-        // Build request URL with official 0x API endpoint
-        // ✅ UPDATED: Using /swap/allowance-holder/quote endpoint (official v2 API)
-        // Docs: https://0x.org/docs/api#tag/Swap/operation/swap::allowanceHolder::getQuote
-        const baseUrl = 'https://api.0x.org/swap/allowance-holder/quote';
-
-        const params = new URLSearchParams({
-          chainId: String(codeChain),           // Chain ID as string (required)
-          sellToken: sc_input_in,                // Sell token address (checksummed, required)
-          buyToken: sc_output_in,                // Buy token address (checksummed, required)
-          sellAmount: String(amount_in_big),     // Amount in base units (required)
-          taker: userAddr,                       // Taker address (required)
-          slippageBps: '100'                     // 1% slippage (default: 100 basis points)
-        });
-
-        const url = `${baseUrl}?${params.toString()}`;
-
-        // Required headers per official documentation
-        const headers = {
-          '0x-api-key': apiKey,
-          '0x-version': 'v2'
-        };
-
-        console.log(`[Matcha API] Request: ${chainName} ${sc_input_in} -> ${sc_output_in}`);
-
-        return { url, method: 'GET', headers };
+        // ℹ️ EVM Matcha no longer uses direct 0x API (no API key needed)
+        // EVM chains should route through proxy strategies:
+        //   delta-matcha, c98-matcha, rainbow-matcha, rabby-matcha
+        // This direct strategy is only for SOLANA
+        throw new Error('[Matcha] Direct 0x API disabled for EVM. Use proxy strategies (delta-matcha, c98-matcha, etc.)');
       },
       parseResponse: (response, { des_output, des_input, chainName }) => {
         const isSolana = chainName && String(chainName).toLowerCase() === 'solana';

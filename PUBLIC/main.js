@@ -958,26 +958,11 @@ function renderSettingsForm() {
     // Load existing settings
     const appSettings = getFromLocalStorage('SETTING_SCANNER') || {};
     console.log('[SETTINGS LOAD] Full settings:', appSettings);
-    console.log('[SETTINGS LOAD] matchaApiKeys:', appSettings.matchaApiKeys);
 
     $('#user').val(appSettings.nickname || '');
     $('#jeda-time-group').val(appSettings.jedaTimeGroup || 2000);
     $('#jeda-koin').val(appSettings.jedaKoin || 500);
     $('#walletMeta').val(appSettings.walletMeta || '');
-
-    // ✅ Load Matcha API keys (convert comma-separated to newline for better readability)
-    if (appSettings.matchaApiKeys) {
-        const keysForDisplay = appSettings.matchaApiKeys.split(',').join('\n');
-        console.log('[SETTINGS LOAD] Keys to display:', keysForDisplay);
-        $('#matchaApiKeys').val(keysForDisplay);
-        console.log('[SETTINGS LOAD] Field value after set:', $('#matchaApiKeys').val());
-    } else {
-        console.log('[SETTINGS LOAD] No matchaApiKeys found, setting empty');
-        $('#matchaApiKeys').val('');
-    }
-
-    // ✅ Verify field exists in DOM
-    console.log('[SETTINGS LOAD] matchaApiKeys field exists:', $('#matchaApiKeys').length > 0);
 
     // ✅ NEW: Render CEX API Key inputs and load saved values
     renderCEXAPIKeyInputs();
