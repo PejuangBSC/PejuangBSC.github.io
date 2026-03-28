@@ -196,9 +196,9 @@ async function scanToken(tok) {
     const dispAskCtD = alCtD_ref ? alCtD_ref.lastLevelPrice : obToken.askPrice;
     const dispBidDtC = alDtC_ref ? alDtC_ref.lastLevelPrice : obToken.bidPrice;
 
-    // Per-DEX auto level: setiap DEX pakai modal-nya sendiri untuk wei & PnL
+    // Per-DEX auto level: per-DEX token modal → default token modal → DEX global → ref
     function _dexEffCtD(dexKey) {
-        const modal = CFG.dex?.[dexKey]?.modalCtD || _refModalCtD;
+        const modal = tok.dexModals?.[dexKey]?.ctd || tok.modalCtD || CFG.dex?.[dexKey]?.modalCtD || _refModalCtD;
         if (CFG.autoLevel && obToken.asks?.length) {
             const al = calculateAutoVolume(obToken, modal, CFG.levelCount, 'asks');
             return { modal: al ? al.actualModal : modal, price: al ? al.avgPrice : obToken.askPrice,
@@ -207,7 +207,7 @@ async function scanToken(tok) {
         return { modal, price: obToken.askPrice, full: true };
     }
     function _dexEffDtC(dexKey) {
-        const modal = CFG.dex?.[dexKey]?.modalDtC || _refModalDtC;
+        const modal = tok.dexModals?.[dexKey]?.dtc || tok.modalDtC || CFG.dex?.[dexKey]?.modalDtC || _refModalDtC;
         if (CFG.autoLevel && obToken.bids?.length) {
             const al = calculateAutoVolume(obToken, modal, CFG.levelCount, 'bids');
             return { modal: al ? al.actualModal : modal, price: al ? al.avgPrice : obToken.bidPrice,
@@ -304,7 +304,7 @@ async function scanToken(tok) {
 
     const allCtD = [];
     if (!blockCtD) {
-        const _pCtD = (r, dk) => { r.dexModalCtD = CFG.dex?.[dk]?.modalCtD; r.modalFull = dxCtD[dk].full; r.modalActual = Math.round(dxCtD[dk].modal); r.dexMinPnl = CFG.dex?.[dk]?.minPnl ?? tokMinPnl; allCtD.push(r); };
+        const _pCtD = (r, dk) => { r.dexModalCtD = tok.dexModals?.[dk]?.ctd || tok.modalCtD || CFG.dex?.[dk]?.modalCtD; r.modalFull = dxCtD[dk].full; r.modalActual = Math.round(dxCtD[dk].modal); r.dexMinPnl = tok.dexModals?.[dk]?.pnl ?? tokMinPnl ?? CFG.dex?.[dk]?.minPnl ?? 1; allCtD.push(r); };
         mxCtD.forEach(q => { const p = _parseMx(q); if (p) _pCtD(computeQuotePnl(p, pairDec, bidPair, dxCtD.metax.modal, tok.cex, dxCtD.metax.price, 'ctd', feeWdCtD, isPairStable, chainGasFee), 'metax'); });
         jxCtD.forEach(q => { const p = _parseJx(q); if (p) _pCtD(computeQuotePnl(p, pairDec, bidPair, dxCtD.jumpx.modal, tok.cex, dxCtD.jumpx.price, 'ctd', feeWdCtD, isPairStable, chainGasFee), 'jumpx'); });
         kbCtD.forEach(q => { const p = _normQ(q); if (p) _pCtD(computeQuotePnl(p, pairDec, bidPair, dxCtD.kyber.modal, tok.cex, dxCtD.kyber.price, 'ctd', feeWdCtD, isPairStable, chainGasFee), 'kyber'); });
@@ -318,7 +318,7 @@ async function scanToken(tok) {
     // 6. Combine & sort DTC quotes — skip jika DP token ditutup (blockDtC)
     const allDtC = [];
     if (!blockDtC) {
-        const _pDtC = (r, dk) => { r.dexModalDtC = CFG.dex?.[dk]?.modalDtC; r.modalFull = dxDtC[dk].full; r.modalActual = Math.round(dxDtC[dk].modal); r.dexMinPnl = CFG.dex?.[dk]?.minPnl ?? tokMinPnl; allDtC.push(r); };
+        const _pDtC = (r, dk) => { r.dexModalDtC = tok.dexModals?.[dk]?.dtc || tok.modalDtC || CFG.dex?.[dk]?.modalDtC; r.modalFull = dxDtC[dk].full; r.modalActual = Math.round(dxDtC[dk].modal); r.dexMinPnl = tok.dexModals?.[dk]?.pnl ?? tokMinPnl ?? CFG.dex?.[dk]?.minPnl ?? 1; allDtC.push(r); };
         mxDtC.forEach(q => { const p = _parseMx(q); if (p) _pDtC(computeQuotePnl(p, tok.decToken, dxDtC.metax.price, dxDtC.metax.modal, tok.cex, dxCtD.metax.price, 'dtc', 0, isPairStable, chainGasFee), 'metax'); });
         jxDtC.forEach(q => { const p = _parseJx(q); if (p) _pDtC(computeQuotePnl(p, tok.decToken, dxDtC.jumpx.price, dxDtC.jumpx.modal, tok.cex, dxCtD.jumpx.price, 'dtc', 0, isPairStable, chainGasFee), 'jumpx'); });
         kbDtC.forEach(q => { const p = _normQ(q); if (p) _pDtC(computeQuotePnl(p, tok.decToken, dxDtC.kyber.price, dxDtC.kyber.modal, tok.cex, dxCtD.kyber.price, 'dtc', 0, isPairStable, chainGasFee), 'kyber'); });
@@ -382,11 +382,11 @@ async function scanToken(tok) {
             const ctdModalLbl = ctdInsuf
                 ? `<span class="hdr-modal-set">$${ctdModalSet}</span> | <span class="hdr-modal-act">$${r.modalActual}✅</span>`
                 : (ctdModalSet ? `<span class="hdr-modal-ok">$${ctdModalSet}✅</span>` : '');
-            if (hdrEl) { hdrEl.innerHTML = ctdName + (ctdSrcTag ? ' ' + ctdSrcTag : '') + (ctdModalLbl ? `<span class="hdr-dex-modal">${ctdModalLbl}</span>` : ''); hdrEl.className = 'mon-dex-hdr'; hdrEl.dataset.effprice = r.effPrice; hdrEl.dataset.cexFee1 = r.cexFee1.toFixed(4); hdrEl.dataset.cexFee2 = r.cexFee2.toFixed(4); hdrEl.dataset.feeWd = r.wdFee.toFixed(4); hdrEl.dataset.feeSwap = (r.feeSwap || 0).toFixed(6); hdrEl.dataset.totalFee = r.totalFee.toFixed(6); hdrEl.dataset.pnlKotor = (r.pnlKotor || 0).toFixed(4); hdrEl.dataset.pnlBersih = r.pnl.toFixed(4); hdrEl.dataset.modalSet = ctdModalSet || ''; hdrEl.dataset.modalActual = r.modalActual != null ? r.modalActual : ''; const _ctdBadge = r.src === 'MX' ? 'MT' : r.src === 'JX' ? 'JM' : r.src === 'BG' ? 'BG' : r.src === 'KB' ? 'KB' : ''; hdrEl.dataset.dexName = ctdName + (_ctdBadge ? ' ' + _ctdBadge : ''); }
+            if (hdrEl) { hdrEl.innerHTML = ctdName + (ctdSrcTag ? ' ' + ctdSrcTag : '') + (ctdModalLbl ? `<span class="hdr-dex-modal">${ctdModalLbl}</span>` : ''); hdrEl.className = 'mon-dex-hdr'; hdrEl.dataset.effprice = r.effPrice; hdrEl.dataset.cexFee1 = r.cexFee1.toFixed(4); hdrEl.dataset.cexFee2 = r.cexFee2.toFixed(4); hdrEl.dataset.feeWd = r.wdFee.toFixed(4); hdrEl.dataset.feeSwap = (r.feeSwap || 0).toFixed(6); hdrEl.dataset.totalFee = r.totalFee.toFixed(6); hdrEl.dataset.pnlKotor = (r.pnlKotor || 0).toFixed(4); hdrEl.dataset.pnlBersih = r.pnl.toFixed(4); hdrEl.dataset.modalSet = ctdModalSet || ''; hdrEl.dataset.modalActual = r.modalActual != null ? r.modalActual : ''; hdrEl.dataset.minPnl = (r.dexMinPnl ?? tokMinPnl).toFixed(2); const _ctdBadge = r.src === 'MX' ? 'MT' : r.src === 'JX' ? 'JM' : r.src === 'BG' ? 'BG' : r.src === 'KB' ? 'KB' : ''; hdrEl.dataset.dexName = ctdName + (_ctdBadge ? ' ' + _ctdBadge : ''); }
             if (cexEl) { cexEl.innerHTML = _cexPriceHtml(`↑ ${fmtCompact(dispAskCtD)}$`, _tradeUrl); cexEl.className = 'mon-dex-cell mc-ask' + sigCls; }
             if (dexEl) { dexEl.innerHTML = _dexPriceHtml(`↓ ${fmtCompact(r.effPrice)}$`, r.name, 'ctd'); dexEl.className = 'mon-dex-cell mc-bid' + sigCls; }
             if (feeEl) { feeEl.textContent = _fmtFeeCell(r.wdFee, r.cexFee1 + r.cexFee2, r.feeSwap || 0); feeEl.className = 'mon-dex-cell mc-recv' + sigCls; }
-            if (pnlEl) { const cls = r.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'; pnlEl.textContent = `${fmtPnl(r.pnl)}$`; pnlEl.className = `mon-dex-cell mc-pnl ${cls}` + sigCls; }
+            if (pnlEl) { const cls = r.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'; pnlEl.textContent = `${fmtPnl(r.pnl)}$`; pnlEl.className = `mon-dex-cell mc-pnl ${cls}` + sigCls; pnlEl.title = `${r.name || 'DEX'}\nMin PNL: $${(r.dexMinPnl ?? tokMinPnl).toFixed(2)}\nPNL: ${fmtPnl(r.pnl)}$`; }
         });
         // Fill remaining empty columns with DEX name + error info
         for (let i = ctdData.length; i < n; i++) {
@@ -451,11 +451,11 @@ async function scanToken(tok) {
             const dtcModalLbl = dtcInsuf
                 ? `<span class="hdr-modal-set">$${dtcModalSet}</span> | <span class="hdr-modal-act">$${r.modalActual}✅</span>`
                 : (dtcModalSet ? `<span class="hdr-modal-ok">$${dtcModalSet}✅</span>` : '');
-            if (hdrEl) { hdrEl.innerHTML = dtcName + (dtcSrcTag ? ' ' + dtcSrcTag : '') + (dtcModalLbl ? `<span class="hdr-dex-modal">${dtcModalLbl}</span>` : ''); hdrEl.className = 'mon-dex-hdr'; hdrEl.dataset.effprice = r.effPrice; hdrEl.dataset.cexFee1 = r.cexFee1.toFixed(4); hdrEl.dataset.cexFee2 = r.cexFee2.toFixed(4); hdrEl.dataset.feeWd = r.wdFee.toFixed(4); hdrEl.dataset.feeSwap = (r.feeSwap || 0).toFixed(6); hdrEl.dataset.totalFee = r.totalFee.toFixed(6); hdrEl.dataset.pnlKotor = (r.pnlKotor || 0).toFixed(4); hdrEl.dataset.pnlBersih = r.pnl.toFixed(4); hdrEl.dataset.modalSet = dtcModalSet || ''; hdrEl.dataset.modalActual = r.modalActual != null ? r.modalActual : ''; const _dtcBadge = r.src === 'MX' ? 'MT' : r.src === 'JX' ? 'JM' : r.src === 'BG' ? 'BG' : r.src === 'KB' ? 'KB' : ''; hdrEl.dataset.dexName = dtcName + (_dtcBadge ? ' ' + _dtcBadge : ''); }
+            if (hdrEl) { hdrEl.innerHTML = dtcName + (dtcSrcTag ? ' ' + dtcSrcTag : '') + (dtcModalLbl ? `<span class="hdr-dex-modal">${dtcModalLbl}</span>` : ''); hdrEl.className = 'mon-dex-hdr'; hdrEl.dataset.effprice = r.effPrice; hdrEl.dataset.cexFee1 = r.cexFee1.toFixed(4); hdrEl.dataset.cexFee2 = r.cexFee2.toFixed(4); hdrEl.dataset.feeWd = r.wdFee.toFixed(4); hdrEl.dataset.feeSwap = (r.feeSwap || 0).toFixed(6); hdrEl.dataset.totalFee = r.totalFee.toFixed(6); hdrEl.dataset.pnlKotor = (r.pnlKotor || 0).toFixed(4); hdrEl.dataset.pnlBersih = r.pnl.toFixed(4); hdrEl.dataset.modalSet = dtcModalSet || ''; hdrEl.dataset.modalActual = r.modalActual != null ? r.modalActual : ''; hdrEl.dataset.minPnl = (r.dexMinPnl ?? tokMinPnl).toFixed(2); const _dtcBadge = r.src === 'MX' ? 'MT' : r.src === 'JX' ? 'JM' : r.src === 'BG' ? 'BG' : r.src === 'KB' ? 'KB' : ''; hdrEl.dataset.dexName = dtcName + (_dtcBadge ? ' ' + _dtcBadge : ''); }
             if (cexEl) { cexEl.innerHTML = _cexPriceHtml(`↓ ${fmtCompact(dispBidDtC)}$`, _tradeUrl); cexEl.className = 'mon-dex-cell mc-bid' + sigCls; }
             if (dexEl) { dexEl.innerHTML = _dexPriceHtml(`↑ ${fmtCompact(r.effPrice)}$`, r.name, 'dtc'); dexEl.className = 'mon-dex-cell mc-ask' + sigCls; }
             if (feeEl) { feeEl.textContent = _fmtFeeCell(r.wdFee, r.cexFee1 + r.cexFee2, r.feeSwap || 0); feeEl.className = 'mon-dex-cell mc-recv' + sigCls; }
-            if (pnlEl) { const cls = r.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'; pnlEl.textContent = `${fmtPnl(r.pnl)}$`; pnlEl.className = `mon-dex-cell mc-pnl ${cls}` + sigCls; }
+            if (pnlEl) { const cls = r.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'; pnlEl.textContent = `${fmtPnl(r.pnl)}$`; pnlEl.className = `mon-dex-cell mc-pnl ${cls}` + sigCls; pnlEl.title = `${r.name || 'DEX'}\nMin PNL: $${(r.dexMinPnl ?? tokMinPnl).toFixed(2)}\nPNL: ${fmtPnl(r.pnl)}$`; }
         });
         // Fill remaining empty columns with DEX name + error info
         for (let i = dtcData.length; i < n; i++) {

@@ -1675,16 +1675,23 @@ body.is-scanning .scan-sort-group {
 .token-list-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
 .token-list-sym {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 3px;
+  min-width: 80px;
+  max-width: 110px;
+  flex-shrink: 0;
 }
 
 /* Token name container in token list (inline with wdp icons) */
@@ -1694,16 +1701,72 @@ body.is-scanning .scan-sort-group {
   gap: 2px;
 }
 .tl-sep {
-  font-size: 14px;
-  color: rgba(128,128,128,0.7);
-  margin: 0 2px;
+  font-size: 9px;
+  color: rgba(128,128,128,0.5);
+  margin: 0;
+  line-height: 1;
 }
 
-.token-list-sub {
-  font-size: 13px;
-  color: blue;
-  margin-top: 2px;
+.tl-dex-table {
+  display: grid;
+  grid-template-columns: 40px 72px 72px 50px;
+  gap: 2px 3px;
+  margin-top: 0;
+  align-items: center;
   font-family: 'Montserrat', sans-serif;
+  flex: 1;
+  min-width: 0;
+  justify-content: space-evenly;
+}
+.tl-dex-th {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align: center;
+}
+.tl-dex-th:first-child { text-align: left; }
+.tl-dex-tb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 3px;
+  white-space: nowrap;
+}
+.tl-dex-tb.tl-over {
+  outline: 1.5px solid #0abf7a;
+  outline-offset: 1px;
+}
+.tl-dex-tc {
+  font-size: 10px;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+.tl-dex-tc-ctd { color: #0abf7a; font-size: 11px; text-align: center;}
+.tl-dex-tc-dtc { color: #c0504d; font-size: 11px; text-align: center;}
+.tl-dex-tc-pnl { color: #f5a623;  font-size: 11px; text-align: center;}
+.tl-dex-badge-metax  { background: #e67e22; }
+.tl-dex-badge-jumpx  { background: #8e44ad; }
+.tl-dex-badge-kyber  { background: #0de01e; }
+.tl-dex-badge-okx    { background: #1a1a1a; }
+.tl-dex-badge-bungee { background: #c0392b; }
+.tl-modal-divider {
+  color: rgba(128,128,128,0.4);
+  font-size: 10px;
+}
+.tl-pnl-lbl {
+  color: var(--muted);
+  font-size: 11px;
+}
+.tl-pnl-lbl b {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .token-list-actions {
@@ -2265,14 +2328,21 @@ body.is-scanning .scan-sort-group {
   gap: 6px;
   background: #f7f9fc;
   border: 1px solid #e0e6f0;
+  border-left-width: 4px;
   border-radius: 10px;
   padding: 8px 10px;
   transition: background .15s, border-color .15s;
 }
 
+/* Warna aksen kiri per DEX */
+.dex-cfg-row.dex-cfg-metax  { border-left-color: #e67e22; background: rgba(230,126,34,0.05); }
+.dex-cfg-row.dex-cfg-jumpx  { border-left-color: #8e44ad; background: rgba(142,68,173,0.05); }
+.dex-cfg-row.dex-cfg-kyber  { border-left-color: #2980b9; background: rgba(41,128,185,0.05); }
+.dex-cfg-row.dex-cfg-okx    { border-left-color: #444;    background: rgba(60,60,60,0.04);   }
+.dex-cfg-row.dex-cfg-bungee { border-left-color: #c0392b; background: rgba(192,57,43,0.05);  }
+
 .dex-cfg-row.dex-on {
-  background: rgba(10, 180, 180, 0.06);
-  border-color: rgba(10, 180, 180, 0.30);
+  filter: brightness(0.97);
 }
 
 /* Top row: toggle + badge + name + status */
@@ -2288,15 +2358,21 @@ body.is-scanning .scan-sort-group {
   color: var(--text);
   flex: 1;
 }
+.dex-cfg-metax  .dex-row-name { color: #e67e22; }
+.dex-cfg-jumpx  .dex-row-name { color: #8e44ad; }
+.dex-cfg-kyber  .dex-row-name { color: #2980b9; }
+.dex-cfg-okx    .dex-row-name { color: #444;    }
+.dex-cfg-bungee .dex-row-name { color: #c0392b; }
+
 
 .dex-active-lbl {
   font-size: 10px;
-  font-weight: 700;
   color: #aaa;
 }
 
 .dex-active-lbl.on {
-  color: #0ab4b4;
+  color: #09ce37;
+  font-size: 10px;
 }
 
 /* Toggle switch */
@@ -2331,7 +2407,7 @@ body.is-scanning .scan-sort-group {
 }
 
 .dex-sw.on {
-  background: #0ab4b4;
+  background: #58f26d;
 }
 
 .dex-sw.on::after {
@@ -2524,6 +2600,88 @@ body.is-scanning .scan-sort-group {
   letter-spacing: 1px;
   padding: 4px 0;
   border-bottom: 1px solid rgba(10, 191, 122, 0.22);
+}
+.sheet-sub-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 10px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.sheet-sub-hint {
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ── Per-DEX Modal Table (form) ─────────────── */
+.dex-modal-per-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.dex-modal-per-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.03);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.dex-modal-per-badge {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: #fff;
+  flex-shrink: 0;
+  min-width: 24px;
+  text-align: center;
+}
+.dex-modal-per-badge.dex-badge-metax  { background: #e67e22; }
+.dex-modal-per-badge.dex-badge-jumpx  { background: #8e44ad; }
+.dex-modal-per-badge.dex-badge-kyber  { background: #2980b9; }
+.dex-modal-per-badge.dex-badge-okx    { background: #27ae60; }
+.dex-modal-per-badge.dex-badge-bungee { background: #c0392b; }
+.dex-modal-per-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 52px;
+  flex-shrink: 0;
+}
+.dex-row-overridden {
+  background: rgba(10,191,122,0.06);
+  border-color: rgba(10,191,122,0.25);
+}
+.dex-modal-per-inputs {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+.dex-modal-per-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.dex-modal-per-lbl {
+  font-size: 9.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.dex-modal-inp {
+  font-size: 12px !important;
+  padding: 5px 8px !important;
+}
+
+/* ── Per-DEX Modal Table (token list) ── (lihat .tl-dex-table di atas) ── */
+.dex-pnl-field {
+  max-width: 90px;
 }
 
 .form-group {
@@ -3351,6 +3509,18 @@ body.is-scanning .scan-sort-group {
   font-weight: bold;
   font-size: 0.97em;
 }
+
+.ob-tip-minpnl-row {
+  border-top: 1px dashed rgba(150, 150, 150, 0.25);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.ob-tip-minpnl-val {
+  font-weight: 600;
+  font-size: 0.9em;
+}
+.ob-tip-minpnl-ok { color: #0abf7a; }
+.ob-tip-minpnl-no { color: #e05555; }
 
 /* ══════════════════════════════════════════
    KALKULATOR MODAL

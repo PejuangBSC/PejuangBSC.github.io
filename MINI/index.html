@@ -188,15 +188,15 @@
                 <!-- DEX & Auto Level -->
                 <div class="set-section">📊 DEX & AUTO LEVEL</div>
                 <div class="settings-grid-4">
-                    <div class="settings-field">
+                    <div class="settings-field" id="fieldQuoteMetax">
                         <label class="settings-label">DEX <span class="src-tag mx">MT</span></label>
                         <input class="settings-input" id="setQuoteMetax" type="number" min="1" max="5" value="2">
                     </div>
-                    <div class="settings-field">
+                    <div class="settings-field" id="fieldQuoteJumpx">
                         <label class="settings-label">DEX <span class="src-tag jx">JM</span></label>
                         <input class="settings-input" id="setQuoteJumpx" type="number" min="1" max="5" value="2">
                     </div>
-                    <div class="settings-field">
+                    <div class="settings-field" id="fieldQuoteBungee">
                         <label class="settings-label">DEX <span class="src-tag bg">BG</span></label>
                         <input class="settings-input" id="setQuoteBungee" type="number" min="1" max="5" value="2">
                     </div>
@@ -367,20 +367,8 @@
             <!-- Modal & PNL -->
             <div class="sheet-section-title" style="padding-top:6px">Modal & PNL</div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">CEX→DEX ($)</label>
-                    <input class="form-input" id="fModalCtD" type="number" placeholder="Modal CDX" value="100">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">DEX→CEX ($)</label>
-                    <input class="form-input" id="fModalDtC" type="number" placeholder="Modal DXC" value="80">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Min PnL ($)</label>
-                    <input class="form-input" id="fMinPnl" type="number" step="0.1" placeholder="Min PnL">
-                </div>
-            </div>
+            <div class="sheet-sub-label">Modal & Min PnL per DEX</div>
+            <div id="dexModalPerToken" class="dex-modal-per-table"></div>
 
         </div><!-- /sheet-body -->
 

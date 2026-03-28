@@ -70,6 +70,17 @@ function isKyberEnabled()     { return !!(CFG.dex?.kyber?.active  && APP_DEV_CON
 function isOkxEnabled()       { return !!(CFG.dex?.okx?.active    && APP_DEV_CONFIG.defaultEnableOkx   === true); }
 function isBungeeEnabled()    { return !!(CFG.dex?.bungee?.active && (CFG.dex?.bungee?.count || 0) > 0); }
 
+// DEX yang diizinkan tampil di UI (bulk modal, CRUD form, token list chip)
+// — dikendalikan developer lewat config.js, bukan user
+const _DEX_ENABLED_BY_CONFIG = {
+    metax:  () => APP_DEV_CONFIG.defaultQuoteCountMetax  > 0,
+    jumpx:  () => APP_DEV_CONFIG.defaultQuoteCountJumpx  > 0,
+    kyber:  () => APP_DEV_CONFIG.defaultEnableKyber === true,
+    okx:    () => APP_DEV_CONFIG.defaultEnableOkx   === true,
+    bungee: () => APP_DEV_CONFIG.defaultQuoteCountBungee > 0,
+};
+const getEnabledDexList = () => DEX_LIST.filter(def => _DEX_ENABLED_BY_CONFIG[def.key]?.() !== false);
+
 // Kembalikan token yang lolos filter CEX+chain, diurutkan sesuai monitorSort
 let monitorSort = 'az'; // 'az' | 'za' | 'rand'
 let monitorFavOnly = false; // jika true, hanya tampilkan koin favorit di scanner
@@ -142,6 +153,7 @@ const getTokens = () => {
     return _tokenCache;
 };
 const saveTokens = (a) => { _tokenCache = a; localStorage.setItem(LS_TOKENS, JSON.stringify(a)); };
+const clearTokenCache = () => { _tokenCache = null; };
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const toWei = (amt, dec) => {
     const n = Math.round(amt * 10 ** dec);
