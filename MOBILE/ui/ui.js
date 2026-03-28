@@ -893,32 +893,19 @@ function buildMonitorRows(tokenList) {
         return;
     }
     const n = totalQuoteCount();
-    const dexHdr = (pfx, color, tokId) => Array.from({ length: n }, (_, i) =>
-        `<td class="mon-dex-hdr" data-${pfx}-hdr="${i}" data-tok="${tokId}" data-dir="${pfx}"
-          onmouseenter="showObTooltip(this,event)" onmouseleave="hideObTooltip()"
-          ontouchstart="showObTooltip(this,event);event.stopPropagation()"
-          style="background:${color};cursor:pointer">-</td>`
-    ).join('');
-    const dexRow = (pfx, attr) => Array.from({ length: n }, (_, i) =>
-        `<td class="mon-dex-cell" data-${pfx}-${attr}="${i}">-</td>`
-    ).join('');
-
     const _hasCexSt = typeof getCexTokenStatus === 'function';
-    monitorList.innerHTML = tokens.map((t, idx) => {
+
+    function _buildCardHTML(t, idx) {
         const cc = CONFIG_CEX[t.cex] || {};
         const ch = CONFIG_CHAINS[t.chain] || {};
-        const tri = t.tickerPair && t.tickerPair !== t.ticker;
-        const sym = t.ticker + (tri ? '↔' + t.tickerPair : '');
         const pairTk = t.tickerPair || t.ticker;
         const minPnlLbl = (isFinite(t.minPnl) && t.minPnl !== null) ? t.minPnl : APP_DEV_CONFIG.defaultMinPnl;
         const chainColor = ch.WARNA || '#555';
-        // WD/DP icons dari cache untuk header token name
         const _stTok  = _hasCexSt ? getCexTokenStatus(t.cex, t.ticker, t.chain, 1) : null;
         const _stPair = _hasCexSt ? getCexTokenStatus(t.cex, pairTk, t.chain, 1) : null;
         const _wf     = t.cex !== 'indodax' && typeof isCexWalletFetched === 'function' && isCexWalletFetched(t.cex);
         const _icTok  = _wdpIcons(_stTok, _wf, t.cex);
         const _icPair = _wdpIcons(_stPair, _wf, t.cex);
-        // Stock links — explorer URL: {URL_Chain}/token/{sc}?a={walletAddr}
         const _cexKey = t.cex.toUpperCase();
         const _walletInfo = ch.WALLET_CEX && ch.WALLET_CEX[_cexKey];
         const _explorerBase = ch.URL_Chain || '';
@@ -933,6 +920,18 @@ function buildMonitorRows(tokenList) {
         }
         const _stokCtd = _mkStokLinks(t.scToken, t.ticker);
         const _stokDtc = _mkStokLinks(t.scPair,  pairTk);
+        function _dexHdrHtml(pfx, color) {
+            let s = '';
+            for (let i = 0; i < n; i++)
+                s += `<td class="mon-dex-hdr" data-${pfx}-hdr="${i}" data-tok="${t.id}" data-dir="${pfx}" style="background:${color};cursor:pointer">-</td>`;
+            return s;
+        }
+        function _dexRowHtml(pfx, attr) {
+            let s = '';
+            for (let i = 0; i < n; i++)
+                s += `<td class="mon-dex-cell" data-${pfx}-${attr}="${i}">-</td>`;
+            return s;
+        }
         return `<div class="mon-card" id="card-${t.id}" style="border-left:3px solid ${chainColor}">
   <div class="mon-card-hdr" style="background:linear-gradient(135deg,${chainColor}55 0%,${chainColor}20 100%);border-bottom:2px solid ${chainColor}88">
     <span class="mon-sym">
@@ -954,13 +953,13 @@ function buildMonitorRows(tokenList) {
   <table class="mon-sub-table ctd-table">
     <thead><tr class="mon-sub-hdr">
       <td class="mon-lbl-hdr" style="background:${MON_CTD_COLOR}">${_stokCtd}<span class="hdr-amt" data-modal-hdr="ctd">$${t.modalCtD}<span class="tbl-status"></span></span></td>
-      ${dexHdr('ctd', MON_CTD_COLOR, t.id)}
+      ${_dexHdrHtml('ctd', MON_CTD_COLOR)}
     </tr></thead>
     <tbody>
-      <tr class="mon-row-cex"><td class="mon-lbl-side"><span style='color:green;'>BELI [${t.ticker}]</span></td>${dexRow('ctd', 'cex')}</tr>
-      <tr class="mon-row-dex"><td class="mon-lbl-side"><span style='color:red;'>${t.ticker}→${pairTk}</span></td>${dexRow('ctd', 'dex')}</tr>
-      <tr class="mon-row-recv"><td class="mon-lbl-side">ALL FEE</td>${dexRow('ctd', 'fee')}</tr>
-      <tr class="mon-row-pnl"><td class="mon-lbl-side">💰 PNL <span class="lbl-minpnl">($${minPnlLbl})</span></td>${dexRow('ctd', 'pnl')}</tr>
+      <tr class="mon-row-cex"><td class="mon-lbl-side"><span style='color:green;'>BELI [${t.ticker}]</span></td>${_dexRowHtml('ctd', 'cex')}</tr>
+      <tr class="mon-row-dex"><td class="mon-lbl-side"><span style='color:red;'>${t.ticker}→${pairTk}</span></td>${_dexRowHtml('ctd', 'dex')}</tr>
+      <tr class="mon-row-recv"><td class="mon-lbl-side">ALL FEE</td>${_dexRowHtml('ctd', 'fee')}</tr>
+      <tr class="mon-row-pnl"><td class="mon-lbl-side">💰 PNL <span class="lbl-minpnl">($${minPnlLbl})</span></td>${_dexRowHtml('ctd', 'pnl')}</tr>
     </tbody>
   </table>
   </div>
@@ -968,23 +967,21 @@ function buildMonitorRows(tokenList) {
   <table class="mon-sub-table dtc-table">
     <thead><tr class="mon-sub-hdr">
       <td class="mon-lbl-hdr" style="background:${MON_DTC_COLOR}">${_stokDtc}<span class="hdr-amt" data-modal-hdr="dtc">$${t.modalDtC}<span class="tbl-status"></span></span></td>
-      ${dexHdr('dtc', MON_DTC_COLOR, t.id)}
+      ${_dexHdrHtml('dtc', MON_DTC_COLOR)}
     </tr></thead>
     <tbody>
-      <tr class="mon-row-dex"><td class="mon-lbl-side"><span style='color:green;'>${pairTk}→${t.ticker}</span></td>${dexRow('dtc', 'dex')}</tr>
-      <tr class="mon-row-cex"><td class="mon-lbl-side lbl-pair"><span style='color:red;'>JUAL [${t.ticker}]</span></td>${dexRow('dtc', 'cex')}</tr>
-      <tr class="mon-row-recv"><td class="mon-lbl-side">ALL FEE</td>${dexRow('dtc', 'fee')}</tr>
-      <tr class="mon-row-pnl"><td class="mon-lbl-side">💰 PNL <span class="lbl-minpnl">($${minPnlLbl})</span></td>${dexRow('dtc', 'pnl')}</tr>
+      <tr class="mon-row-dex"><td class="mon-lbl-side"><span style='color:green;'>${pairTk}→${t.ticker}</span></td>${_dexRowHtml('dtc', 'dex')}</tr>
+      <tr class="mon-row-cex"><td class="mon-lbl-side lbl-pair"><span style='color:red;'>JUAL [${t.ticker}]</span></td>${_dexRowHtml('dtc', 'cex')}</tr>
+      <tr class="mon-row-recv"><td class="mon-lbl-side">ALL FEE</td>${_dexRowHtml('dtc', 'fee')}</tr>
+      <tr class="mon-row-pnl"><td class="mon-lbl-side">💰 PNL <span class="lbl-minpnl">($${minPnlLbl})</span></td>${_dexRowHtml('dtc', 'pnl')}</tr>
     </tbody>
   </table>
   </div>
   </div>
 </div>`;
-    }).join('');
+    }
 
-    // Build DOM element cache — satu querySelectorAll per card, bukan satu per sel
-    _cardEls.clear();
-    tokens.forEach(t => {
+    function _cacheCardEls(t) {
         const card = document.getElementById('card-' + t.id);
         if (!card) return;
         const els = {
@@ -996,7 +993,6 @@ function buildMonitorRows(tokenList) {
             ctdHdr: [], ctdCex: [], ctdDex: [], ctdFee: [], ctdPnl: [],
             dtcHdr: [], dtcCex: [], dtcDex: [], dtcFee: [], dtcPnl: [],
         };
-        // Satu querySelectorAll per card → ambil semua sel sekaligus
         card.querySelectorAll('[data-modal-hdr],[data-ctd-hdr],[data-ctd-cex],[data-ctd-dex],[data-ctd-fee],[data-ctd-pnl],[data-dtc-hdr],[data-dtc-cex],[data-dtc-dex],[data-dtc-fee],[data-dtc-pnl]').forEach(el => {
             const d = el.dataset;
             if (d.modalHdr === 'ctd') { els.modalCtdHdr = el; return; }
@@ -1012,12 +1008,33 @@ function buildMonitorRows(tokenList) {
             if (d.dtcFee !== undefined) { els.dtcFee[+d.dtcFee] = el; return; }
             if (d.dtcPnl !== undefined) { els.dtcPnl[+d.dtcPnl] = el; }
         });
-        // tbl-status: ambil dari kedua tabel
         const statEls = card.querySelectorAll('.tbl-status');
         els.ctdStatus = statEls[0] || null;
         els.dtcStatus = statEls[1] || null;
         _cardEls.set(t.id, els);
-    });
+    }
+
+    // Clear content and cache sebelum batch build
+    monitorList.innerHTML = '';
+    _cardEls.clear();
+
+    const FIRST_BATCH = 30;
+    const batchToken = {};
+    _buildBatchToken = batchToken;
+
+    function _buildBatch(startIdx) {
+        if (_buildBatchToken !== batchToken) return;
+        const end = Math.min(startIdx + (startIdx === 0 ? FIRST_BATCH : 50), tokens.length);
+        const tmp = document.createElement('div');
+        tmp.innerHTML = tokens.slice(startIdx, end).map((t, i) => _buildCardHTML(t, startIdx + i)).join('');
+        const frag = document.createDocumentFragment();
+        while (tmp.firstChild) frag.appendChild(tmp.firstChild);
+        monitorList.appendChild(frag);
+        for (let i = startIdx; i < end; i++) _cacheCardEls(tokens[i]);
+        if (end < tokens.length) requestAnimationFrame(() => _buildBatch(end));
+    }
+
+    _buildBatch(0);
 }
 
 // ─── Signal Chips ─────────────────────────────
@@ -1420,6 +1437,23 @@ $('#signalBar').on('click', '.signal-chip', function () {
 
 // ─── Init ────────────────────────────────────
 $(function () {
+    // Event delegation untuk .mon-dex-hdr (gantikan inline onmouseenter/onmouseleave/ontouchstart)
+    const ml = document.getElementById('monitorList');
+    if (ml) {
+        ml.addEventListener('mouseover', function (e) {
+            const hdr = e.target.closest('.mon-dex-hdr[data-tok]');
+            if (hdr) showObTooltip(hdr);
+        });
+        ml.addEventListener('mouseout', function (e) {
+            if (!e.target.closest('.mon-dex-hdr[data-tok]')) return;
+            if (!e.relatedTarget || !e.relatedTarget.closest('.mon-dex-hdr[data-tok]')) hideObTooltip();
+        });
+        ml.addEventListener('touchstart', function (e) {
+            const hdr = e.target.closest('.mon-dex-hdr[data-tok]');
+            if (hdr) { showObTooltip(hdr); e.stopPropagation(); }
+        }, { passive: false });
+    }
+
     // Restore auto-reload state
     autoReload = localStorage.getItem('scanAutoReload') === '1';
     _applyAutoReload();

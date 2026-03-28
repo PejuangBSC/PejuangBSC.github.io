@@ -104,6 +104,21 @@ function _updateWdBadge(card, tok, stToken, stPair, cardEls, walletFetched) {
 }
 
 
+// Refresh semua WD/DP icon di card yang sudah dirender (dipanggil setelah wallet data diupdate)
+function refreshAllWdIcons() {
+    if (typeof getCexTokenStatus !== 'function' || typeof isCexWalletFetched !== 'function') return;
+    const tokens = typeof getTokens === 'function' ? getTokens() : [];
+    _cardEls.forEach((els, tokId) => {
+        const tok = tokens.find(t => t.id === tokId);
+        if (!tok) return;
+        const pairSym = (tok.tickerPair || 'USDT').toUpperCase();
+        const stToken = getCexTokenStatus(tok.cex, tok.ticker, tok.chain, 1);
+        const stPair  = getCexTokenStatus(tok.cex, pairSym, tok.chain, 1);
+        const wf = tok.cex !== 'indodax' && isCexWalletFetched(tok.cex);
+        _updateWdBadge(null, tok, stToken, stPair, els, wf);
+    });
+}
+
 async function scanToken(tok) {
     const chainCfg = CONFIG_CHAINS[tok.chain];
     if (!chainCfg) return;

@@ -102,6 +102,7 @@ const tgCooldown = new Map(); // tokenId → timestamp
 const wmCache = {};           // chain → data array
 const _obCache = {};          // tokenId → { bids, asks, bidPrice, askPrice }
 const _cardEls = new Map();  // tokenId → cached DOM element references
+let _buildBatchToken = null; // token untuk membatalkan batch build yang sedang berjalan
 
 // ─── Utility ─────────────────────────────────
 let _tokenCache = null;

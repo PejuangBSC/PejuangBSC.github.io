@@ -137,7 +137,9 @@ async function _fetchMexcWallet() {
   const result = [];
   for (const item of (data || [])) {
     for (const net of (item.networkList || [])) {
-      const chain = _normalizeChain(net.network);
+      // MEXC returns two fields: netWork (short code e.g. "BSC") and network (long name e.g. "BNB Smart Chain(BEP20)")
+      // Prefer netWork (short code) because it maps correctly; fallback to network
+      const chain = _normalizeChain(net.netWork || net.network);
       if (!chain) continue;
       result.push({
         token: item.coin.toUpperCase(),
@@ -419,6 +421,9 @@ async function runUpdateCexWallet() {
   } else {
     showToast(`⚠ ${result.successCount} berhasil, ${result.errors.length} gagal`);
   }
+
+  // Refresh WD/DP icons di semua card yang sudah dirender
+  if (typeof refreshAllWdIcons === 'function') refreshAllWdIcons();
 }
 
 // ─── Export / Import CEX Wallet Data ──────────────────────

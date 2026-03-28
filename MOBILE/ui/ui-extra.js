@@ -285,3 +285,5 @@ async function calcCekToken() {
         showToast('🗑️ Error: ' + e.message);
     }
 }
+
+window.__uiExtraLoaded = true;
