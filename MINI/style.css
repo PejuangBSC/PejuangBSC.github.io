@@ -422,6 +422,19 @@ body {
 .signal-bar.can-scroll-r .sig-arr-r { opacity: 1; pointer-events: auto; }
 
 
+.chip-group {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-right: 2px solid rgba(255,255,255,0.18);
+}
+.chip-group:last-child {
+  border-right: none;
+}
+
 .signal-chip {
   display: inline-flex;
   flex-direction: column;
@@ -574,10 +587,22 @@ body {
 
 .scan-progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-dk));
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--accent)        0px,
+    var(--accent)        8px,
+    var(--accent-dk)     8px,
+    var(--accent-dk)     16px
+  );
+  background-size: 22px 100%;
   width: 0%;
   transition: width .3s;
   box-shadow: 0 0 6px rgba(10, 191, 122, 0.5);
+  animation: progress-stripe .5s linear infinite;
+}
+@keyframes progress-stripe {
+  from { background-position: 0 0; }
+  to   { background-position: 22px 0; }
 }
 
 /* ══════════════════════════════════════════
@@ -3137,6 +3162,25 @@ body.is-scanning .scan-sort-group {
 }
 .ob-tip-info b {
   color: #fff;
+  font-weight: 700;
+}
+.ob-tip-modal-row {
+  font-size: 9.5px;
+  padding: 5px 0 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  margin-bottom: 6px;
+}
+.ob-tip-modal-ok {
+  color: #4caf82;
+  font-weight: 700;
+}
+.ob-tip-modal-set {
+  color: rgba(255,255,255,0.7);
+  font-weight: 700;
+  text-decoration: line-through;
+}
+.ob-tip-modal-insuf {
+  color: #f5a623;
   font-weight: 700;
 }
 .ob-tip-lbl {

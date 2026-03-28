@@ -1338,16 +1338,33 @@ function updateNoSignalNotice() {
 function updateSignalChips(tok, signals, dir) {
     const bar = _getSignalBar();
     if (!bar) return;
-    const prefix = `chip-${dir.toLowerCase()}-${tok.id}-`;
+    const groupId = `chip-group-${dir.toLowerCase()}-${tok.id}`;
+    const prefix  = `chip-${dir.toLowerCase()}-${tok.id}-`;
 
     // Hapus chip lama yang sudah tidak ada sinyalnya
     const activeSrcs = new Set(signals.map(r => r.src));
-    const existing = bar.querySelectorAll(`[id^="${prefix}"]`);
-    for (let i = existing.length - 1; i >= 0; i--) {
-        if (!activeSrcs.has(existing[i].id.slice(prefix.length))) {
-            existing[i].remove();
-            _signalChipCount--;
+    const group = document.getElementById(groupId);
+    if (group) {
+        const existing = group.querySelectorAll(`[id^="${prefix}"]`);
+        for (let i = existing.length - 1; i >= 0; i--) {
+            if (!activeSrcs.has(existing[i].id.slice(prefix.length))) {
+                existing[i].remove();
+                _signalChipCount--;
+            }
         }
+        // Hapus grup jika kosong
+        if (!group.querySelector('.signal-chip')) { group.remove(); }
+    }
+
+    if (!signals.length) { updateNoSignalNotice(); return; }
+
+    // Ambil atau buat grup wrapper
+    let grp = document.getElementById(groupId);
+    if (!grp) {
+        grp = document.createElement('div');
+        grp.className = 'chip-group';
+        grp.id = groupId;
+        bar.prepend(grp);
     }
 
     const cexCfg  = CONFIG_CEX[tok.cex] || {};
@@ -1365,7 +1382,7 @@ function updateSignalChips(tok, signals, dir) {
             chip.id = chipId;
             chip.dataset.tokId = tok.id;
             chip.dataset.dir = dir;
-            bar.prepend(chip);
+            grp.appendChild(chip);
             _signalChipCount++;
         }
         const dexSrc   = r.src || '';
@@ -1540,6 +1557,14 @@ function showObTooltip(el) {
     const dexName = el.textContent.trim() || '?';
     // Fee detail dari dataset header element (per kolom DEX)
     const _feeWdLabel = dir === 'ctd' ? tokenSym : pairSym;
+    const _modalSet    = parseFloat(el.dataset.modalSet) || 0;
+    const _modalActual = el.dataset.modalActual !== '' && el.dataset.modalActual != null ? parseFloat(el.dataset.modalActual) : null;
+    const _modalInsuf  = _modalSet > 0 && _modalActual != null && _modalActual < _modalSet;
+    const _modalHtml   = _modalSet > 0 ? `<div class="ob-tip-modal-row">${
+        _modalInsuf
+            ? `<span class="ob-tip-lbl">Modal Set</span> <span class="ob-tip-modal-set">$${_modalSet}</span> &nbsp;·&nbsp; <span class="ob-tip-lbl">Aktual</span> <span class="ob-tip-modal-insuf">$${_modalActual}</span>`
+            : `<span class="ob-tip-lbl">Modal</span> <span class="ob-tip-modal-ok">$${_modalSet} ✅</span>`
+    }</div>` : '';
     const _cexFee1  = parseFloat(el.dataset.cexFee1) || 0;
     const _cexFee2  = parseFloat(el.dataset.cexFee2) || 0;
     const _feeWd    = parseFloat(el.dataset.feeWd) || (ob ? (dir === 'ctd' ? (ob.feeWdCtD || 0) : 0) : 0);
@@ -1552,11 +1577,11 @@ function showObTooltip(el) {
     const _pnlKotorSign  = _pnlKotor  >= 0 ? '+' : '';
     const _pnlBersihSign = _pnlBersih >= 0 ? '+' : '';
     const _pnlBersihCls  = _pnlBersih >= 0 ? 'pnl-pos' : 'pnl-neg';
-    const _feeDetailHtml = (_cexFee1 > 0 || _cexFee2 > 0 || _feeWd > 0 || _feeSwap > 0)
+    const _feeDetailHtml = (_cexFee1 > 0 || _cexFee2 > 0 || _feeWd >= 0 || _feeSwap > 0)
         ? `<div class="ob-tip-fee-detail">${_cexFee1 > 0 ? `
             <div class="ob-tip-fee-row"><span class="ob-tip-lbl">${_buyLabel}</span><span class="ob-tip-feewd-val">-${_cexFee1.toFixed(3)}$</span></div>` : ''}${_cexFee2 > 0 ? `
-            <div class="ob-tip-fee-row"><span class="ob-tip-lbl">${_sellLabel}</span><span class="ob-tip-feewd-val">-${_cexFee2.toFixed(3)}$</span></div>` : ''}${_feeWd > 0 ? `
-            <div class="ob-tip-fee-row"><span class="ob-tip-lbl">Fee WD ${_feeWdLabel}</span><span class="ob-tip-feewd-val">-${_feeWd.toFixed(3)}$</span></div>` : ''}${_feeSwap > 0 ? `
+            <div class="ob-tip-fee-row"><span class="ob-tip-lbl">${_sellLabel}</span><span class="ob-tip-feewd-val">-${_cexFee2.toFixed(3)}$</span></div>` : ''}
+            <div class="ob-tip-fee-row"><span class="ob-tip-lbl">Fee WD ${_feeWdLabel}</span><span class="ob-tip-feewd-val">-${_feeWd.toFixed(3)}$</span></div>${_feeSwap > 0 ? `
             <div class="ob-tip-fee-row"><span class="ob-tip-lbl">Fee Swap (DEX)</span><span class="ob-tip-feewd-val">-${_feeSwap.toFixed(3)}$</span></div>` : ''}
             <div class="ob-tip-fee-row ob-tip-fee-total"><span class="ob-tip-lbl">Total Fee</span><span class="ob-tip-feewd-val">-${_totalFee.toFixed(3)}$</span></div>
           </div>
@@ -1573,7 +1598,7 @@ function showObTooltip(el) {
       &nbsp;·&nbsp; <span class="ob-tip-lbl">CEX</span> <b>${cexLabel}</b>
       &nbsp;·&nbsp; <span class="ob-tip-lbl">DEX</span> <b>${dexName}</b>
       &nbsp;·&nbsp; <span class="ob-tip-lbl">Chain</span> <b>${chainLabel}</b>
-    </div>${_feeDetailHtml}`;
+    </div>${_modalHtml}${_feeDetailHtml}`;
 
     const actionsHtml = '';
 
