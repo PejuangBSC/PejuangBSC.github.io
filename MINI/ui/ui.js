@@ -1554,17 +1554,17 @@ function showObTooltip(el) {
     const chainLabel = tok ? (CONFIG_CHAINS[tok.chain]?.label || tok.chain).toUpperCase() : '?';
     const tokenSym = tok ? tok.ticker : '?';
     const pairSym = tok ? (tok.tickerPair || tok.ticker) : '?';
-    const dexName = el.textContent.trim() || '?';
+    const dexName = el.dataset.dexName || el.textContent.trim() || '?';
     // Fee detail dari dataset header element (per kolom DEX)
     const _feeWdLabel = dir === 'ctd' ? tokenSym : pairSym;
     const _modalSet    = parseFloat(el.dataset.modalSet) || 0;
     const _modalActual = el.dataset.modalActual !== '' && el.dataset.modalActual != null ? parseFloat(el.dataset.modalActual) : null;
     const _modalInsuf  = _modalSet > 0 && _modalActual != null && _modalActual < _modalSet;
-    const _modalHtml   = _modalSet > 0 ? `<div class="ob-tip-modal-row">${
-        _modalInsuf
-            ? `<span class="ob-tip-lbl">Modal Set</span> <span class="ob-tip-modal-set">$${_modalSet}</span> &nbsp;·&nbsp; <span class="ob-tip-lbl">Aktual</span> <span class="ob-tip-modal-insuf">$${_modalActual}</span>`
-            : `<span class="ob-tip-lbl">Modal</span> <span class="ob-tip-modal-ok">$${_modalSet} ✅</span>`
-    }</div>` : '';
+    const _modalInline = _modalSet > 0
+        ? (_modalInsuf
+            ? `<span class="ob-tip-modal-set">$${_modalSet} ✖</span> <span class="ob-tip-sep-pipe">|</span> <span class="ob-tip-modal-insuf">$${_modalActual} ✅</span>`
+            : `<span class="ob-tip-modal-ok">$${_modalSet} ✅</span>`)
+        : '';
     const _cexFee1  = parseFloat(el.dataset.cexFee1) || 0;
     const _cexFee2  = parseFloat(el.dataset.cexFee2) || 0;
     const _feeWd    = parseFloat(el.dataset.feeWd) || (ob ? (dir === 'ctd' ? (ob.feeWdCtD || 0) : 0) : 0);
@@ -1594,11 +1594,17 @@ function showObTooltip(el) {
     // CTD: tampilkan token → pair; DTC: tampilkan pair → token
     const _infoToken = dir === 'ctd' ? `${tokenSym}→${pairSym}` : `${pairSym}→${tokenSym}`;
     const infoHeader = `<div class="ob-tip-info">
-      <span class="ob-tip-lbl">Token</span> <b>${_infoToken}</b>
-      &nbsp;·&nbsp; <span class="ob-tip-lbl">CEX</span> <b>${cexLabel}</b>
-      &nbsp;·&nbsp; <span class="ob-tip-lbl">DEX</span> <b>${dexName}</b>
-      &nbsp;·&nbsp; <span class="ob-tip-lbl">Chain</span> <b>${chainLabel}</b>
-    </div>${_modalHtml}${_feeDetailHtml}`;
+      <div class="ob-tip-info-row1">
+        <span class="ob-tip-lbl">CEX</span> <b>${cexLabel}</b>
+        <span class="ob-tip-arrow">→</span>
+        <span class="ob-tip-lbl">DEX</span> <b>${dexName}</b>
+      </div>
+      <div class="ob-tip-info-row2">
+        <b>${_infoToken}</b>
+        <span class="ob-tip-sep-pipe">[${chainLabel}]</span>
+        ${_modalInline ? `<span class="ob-tip-sep-pipe">|</span> <span class="ob-tip-lbl">MODAL</span> ${_modalInline}` : ''}
+      </div>
+    </div>${_feeDetailHtml}`;
 
     const actionsHtml = '';
 

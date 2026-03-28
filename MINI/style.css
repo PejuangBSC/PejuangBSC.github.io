@@ -428,11 +428,21 @@ body {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  padding: 0 6px;
-  border-right: 2px solid rgba(255,255,255,0.18);
+  padding: 0 4px;
+  position: relative;
 }
-.chip-group:last-child {
-  border-right: none;
+.chip-group::after {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 36px;
+  border-radius: 2px;
+  background: #1d0ba14d;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+.chip-group:last-child::after {
+  display: none;
 }
 
 .signal-chip {
@@ -3157,18 +3167,34 @@ body.is-scanning .scan-sort-group {
   padding: 0 0 7px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   margin-bottom: 7px;
-  line-height: 1.6;
   word-break: break-word;
+}
+.ob-tip-info-row1 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 3px;
+  font-size: 10px;
+}
+.ob-tip-info-row2 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  font-size: 9.5px;
+}
+.ob-tip-arrow {
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  margin: 0 2px;
+}
+.ob-tip-sep-pipe {
+  color: rgba(255,255,255,0.35);
+  font-size: 9px;
 }
 .ob-tip-info b {
   color: #fff;
   font-weight: 700;
-}
-.ob-tip-modal-row {
-  font-size: 9.5px;
-  padding: 5px 0 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.12);
-  margin-bottom: 6px;
 }
 .ob-tip-modal-ok {
   color: #4caf82;
