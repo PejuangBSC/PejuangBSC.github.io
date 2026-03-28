@@ -598,6 +598,8 @@ body {
   box-shadow: var(--shadow);
   transition: border-color .3s, box-shadow .3s;
   contain: layout style;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 350px;
 }
 
 .mon-card.has-signal {

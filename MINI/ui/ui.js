@@ -1088,7 +1088,7 @@ let _lastBuildN = 0; // track column count; rebuild if changed
 function _dexHdrCols(pfx, color, tokId, n) {
     let s = '';
     for (let i = 0; i < n; i++)
-        s += `<td class="mon-dex-hdr" data-${pfx}-hdr="${i}" data-tok="${tokId}" data-dir="${pfx}" onmouseenter="showObTooltip(this,event)" onmouseleave="hideObTooltip()" ontouchstart="showObTooltip(this,event);event.stopPropagation()" style="background:${color};cursor:pointer">-</td>`;
+        s += `<td class="mon-dex-hdr" data-${pfx}-hdr="${i}" data-tok="${tokId}" data-dir="${pfx}" style="background:${color};cursor:pointer">-</td>`;
     return s;
 }
 function _dexDataCols(pfx, attr, n) {
@@ -1218,6 +1218,8 @@ function _cacheCard(t, card) {
     _cardEls.set(t.id, els);
 }
 
+let _buildBatchToken = null; // token untuk cancel batch build lama
+
 function buildMonitorRows(tokenList) {
     const tokens = tokenList || getFilteredTokens();
     _clearAllSignalChips();
@@ -1228,6 +1230,7 @@ function buildMonitorRows(tokenList) {
     if (!tokens.length) {
         _cardEls.clear();
         _lastBuildN = 0;
+        _buildBatchToken = null;
         monList.innerHTML = '<div class="token-list-empty">Tidak ada token. Tambahkan KOIN di menu DATA KOIN.</div>';
         return;
     }
@@ -1251,23 +1254,44 @@ function buildMonitorRows(tokenList) {
         }
     }
 
-    // Buat kartu baru hanya untuk token yang belum ada di DOM
-    for (const t of tokens) {
-        if (!_cardEls.has(t.id)) {
-            const card = _buildSingleCard(t, n);
-            monList.appendChild(card);
-            _cacheCard(t, card);
+    // Render batch pertama (card yang terlihat di viewport) langsung, sisanya bertahap via rAF
+    const FIRST_BATCH = 30;
+    const batchToken = {};
+    _buildBatchToken = batchToken;
+
+    function _buildBatch(startIdx) {
+        if (_buildBatchToken !== batchToken) return; // build baru dimulai, cancel yang ini
+        const end = Math.min(startIdx + (startIdx === 0 ? FIRST_BATCH : 50), tokens.length);
+        const frag = document.createDocumentFragment();
+        for (let i = startIdx; i < end; i++) {
+            const t = tokens[i];
+            if (!_cardEls.has(t.id)) {
+                const card = _buildSingleCard(t, n);
+                frag.appendChild(card);
+                _cacheCard(t, card);
+            }
+        }
+        if (frag.childElementCount) monList.appendChild(frag);
+
+        if (end < tokens.length) {
+            requestAnimationFrame(() => _buildBatch(end));
+        } else {
+            // Semua card sudah dibuat — urutkan dan beri nomor
+            _finalizeBuildOrder(tokens, monList);
         }
     }
 
+    _buildBatch(0);
+}
+
+function _finalizeBuildOrder(tokens, monList) {
     // Urutkan ulang: pindahkan node DOM yang sudah ada ke urutan baru
     // appendChild pada node yang sudah ada = move (bukan clone) — sangat murah
     for (const t of tokens) {
         const card = document.getElementById('card-' + t.id);
         if (card) monList.appendChild(card);
     }
-
-    // Update nomor urut (cached via els.numEl — tanpa querySelector tambahan)
+    // Update nomor urut (cached via els.numEl)
     tokens.forEach((t, idx) => {
         const numEl = _cardEls.get(t.id)?.numEl;
         if (numEl) numEl.textContent = idx + 1;
@@ -1710,6 +1734,26 @@ $('#signalBar').on('click', '.signal-chip', function () {
 $('#obTooltip')
     .on('mouseenter', function () { clearTimeout(_tooltipHideTimer); })
     .on('mouseleave', function () { hideObTooltip(); });
+
+// ─── Event delegation untuk tooltip DEX header ───
+// Gantikan 65K+ inline onmouseenter/onmouseleave/ontouchstart per cell
+// dengan 3 listener tunggal di container (#monitorList)
+(function () {
+    const ml = document.getElementById('monitorList');
+    if (!ml) return;
+    ml.addEventListener('mouseover', function (e) {
+        const hdr = e.target.closest('.mon-dex-hdr[data-tok]');
+        if (hdr) showObTooltip(hdr, e);
+    });
+    ml.addEventListener('mouseout', function (e) {
+        if (!e.target.closest('.mon-dex-hdr[data-tok]')) return;
+        if (!e.relatedTarget || !e.relatedTarget.closest('.mon-dex-hdr[data-tok]')) hideObTooltip();
+    });
+    ml.addEventListener('touchstart', function (e) {
+        const hdr = e.target.closest('.mon-dex-hdr[data-tok]');
+        if (hdr) { showObTooltip(hdr, e); e.stopPropagation(); }
+    }, { passive: false });
+})();
 
 // ─── Init ────────────────────────────────────
 $(function () {
