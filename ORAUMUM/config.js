@@ -830,8 +830,12 @@ const CONFIG_DEXS = {
                 pairtotoken: 'kyber'           // DEX→CEX: Official KyberSwap API
             },
             secondary: {
-                tokentopair: 'lifi-kyber',     // CEX→DEX: LIFI filtered (rotation)
-                pairtotoken: 'lifi-kyber'     // DEX→CEX: Rabby filtered (rotation)
+                tokentopair: 'krystal-kyber',   // CEX→DEX: Bungee filtered KyberSwap (rotation)
+                pairtotoken: 'bungee-kyber'    // DEX→CEX: Bungee filtered KyberSwap (rotation)
+            },
+            alternative: {
+                tokentopair: 'lifi-kyber',  // CEX→DEX: Krystal allRates filtered KyberSwap (fallback)
+                pairtotoken: 'lifi-kyber'   // DEX→CEX: Krystal allRates filtered KyberSwap (fallback)
             }
         },
         allowFallback: true,  // ✅ Enable rotation between primary and alternative
@@ -867,11 +871,15 @@ const CONFIG_DEXS = {
         fetchdex: {
             primary: {
                 tokentopair: 'okx',           // CEX→DEX: Official OKX DEX API
-                pairtotoken: 'c98-okx'            // DEX→CEX: Official OKX DEX API
+                pairtotoken: 'c98-okx'        // DEX→CEX: Coin98 Superlink filtered for OKX
+            },
+            secondary: {
+                tokentopair: 'krystal-okx',   // CEX→DEX: Krystal allRates filtered OKX
+                pairtotoken: 'krystal-okx'    // DEX→CEX: Krystal allRates filtered OKX
             },
             alternative: {
-                tokentopair: 'c98-okx',      // CEX→DEX: Coin98 Superlink filtered for OKX
-                pairtotoken: 'okx'       // DEX→CEX: Coin98 Superlink filtered for OKX
+                tokentopair: 'okx',       // CEX→DEX: Coin98 Superlink filtered for OKX
+                pairtotoken: 'okx'            // DEX→CEX: Official OKX DEX API
             }
         },
         allowFallback: true, // ✅ Enable rotation between primary and alternative
@@ -937,11 +945,15 @@ const CONFIG_DEXS = {
         fetchdex: {
             primary: {
                 tokentopair: 'delta-matcha',    // CEX→DEX: 1Delta proxy (fast, free) - EVM only
-                pairtotoken: 'c98-matcha'     // DEX→CEX: SWOOP filtered - EVM only
+                pairtotoken: 'c98-matcha'       // DEX→CEX: Coin98 Superlink filtered - EVM only
+            },
+            secondary: {
+                tokentopair: 'rainbow-matcha',   // CEX→DEX: Bungee filtered 0x/Matcha (rotation)
+                pairtotoken: 'bungee-matcha'    // DEX→CEX: Bungee filtered 0x/Matcha (rotation)
             },
             alternative: {
-                tokentopair: 'c98-matcha',  // CEX→DEX: Coin98 Superlink filtered for 0x/Matcha
-                pairtotoken: 'rainbow-matcha'   // DEX→CEX: Coin98 Superlink filtered for 0x/Matcha
+                tokentopair: 'matcha',  // CEX→DEX: Rainbow proxy 0x/Matcha (fallback)
+                pairtotoken: 'matcha'   // DEX→CEX: Rainbow proxy 0x/Matcha (fallback)
             },
             // ✅ SOLANA OVERRIDE: For Solana chain, always use direct matcha endpoint
             solana: {

@@ -80,7 +80,7 @@
         String(g.chain || '').toLowerCase() === String(chainName || '').toLowerCase()
       );
 
-      if (!gasInfo || !gasInfo.nativeTokenPrice) return 0;
+      if (!gasInfo || !gasInfo.tokenPrice) return 0;
 
       // Get chain config for gas limit
       const chainConfig = (typeof root.CONFIG_CHAINS !== 'undefined')
@@ -89,8 +89,8 @@
 
       const gasLimit = gasEstimate || (chainConfig ? chainConfig.GASLIMIT : 80000);
 
-      // Calculate fee: gasLimit * gasPriceGwei * nativeTokenPrice / 1e9
-      const feeUSD = (gasLimit * gasPriceGwei * gasInfo.nativeTokenPrice) / 1e9;
+      // Calculate fee: gasLimit * gasPriceGwei * tokenPrice / 1e9
+      const feeUSD = (gasLimit * gasPriceGwei * gasInfo.tokenPrice) / 1e9;
 
       return Number.isFinite(feeUSD) && feeUSD > 0 ? feeUSD : 0;
     } catch (e) {
@@ -453,7 +453,10 @@
 
         // Override gas price to 0.1 Gwei for privacy calculation
         const gweiOverride = 0.1;
-        const FeeSwap = calculateGasFeeUSD(chainName, gasEstimate, gweiOverride);
+        const calculatedFee = calculateGasFeeUSD(chainName, gasEstimate, gweiOverride);
+        const FeeSwap = (Number.isFinite(calculatedFee) && calculatedFee > 0)
+          ? calculatedFee
+          : getFeeSwap(chainName);
 
         console.log(`[Hinkal-1inch] toAmount: ${outAmount}, out: ${amount_out.toFixed(6)}, gas: $${FeeSwap.toFixed(4)}`);
 
@@ -745,13 +748,23 @@
         const buyAmount = parseFloat(response.buyAmount);
         const amount_out = buyAmount / Math.pow(10, des_output);
 
-        // Calculate gas fee from response
+        // Calculate gas fee from response (fees.gasFee.amount is in wei of native token)
         let FeeSwap = getFeeSwap(chainName);
         try {
           if (response.fees && response.fees.gasFee) {
-            const gasFeeUsd = parseFloat(response.fees.gasFee.amount || 0);
-            if (Number.isFinite(gasFeeUsd) && gasFeeUsd > 0) {
-              FeeSwap = gasFeeUsd;
+            const gasFeeWei = parseFloat(response.fees.gasFee.amount || 0);
+            if (Number.isFinite(gasFeeWei) && gasFeeWei > 0) {
+              const allGasData = (typeof getFromLocalStorage === 'function')
+                ? getFromLocalStorage("ALL_GAS_FEES") : null;
+              if (allGasData) {
+                const gasInfo = allGasData.find(g =>
+                  String(g.chain || '').toLowerCase() === String(chainName || '').toLowerCase()
+                );
+                if (gasInfo && gasInfo.tokenPrice) {
+                  const gasFeeUsd = (gasFeeWei / 1e18) * gasInfo.tokenPrice;
+                  if (Number.isFinite(gasFeeUsd) && gasFeeUsd > 0) FeeSwap = gasFeeUsd;
+                }
+              }
             }
           }
         } catch (e) {
@@ -833,8 +846,21 @@
         let FeeSwap = getFeeSwap(chainName);
         try {
           if (response.fees && response.fees.gasFee) {
-            const gasFeeUsd = parseFloat(response.fees.gasFee.amount || 0);
-            if (Number.isFinite(gasFeeUsd) && gasFeeUsd > 0) FeeSwap = gasFeeUsd;
+            // fees.gasFee.amount is in wei of native token
+            const gasFeeWei = parseFloat(response.fees.gasFee.amount || 0);
+            if (Number.isFinite(gasFeeWei) && gasFeeWei > 0) {
+              const allGasData = (typeof getFromLocalStorage === 'function')
+                ? getFromLocalStorage("ALL_GAS_FEES") : null;
+              if (allGasData) {
+                const gasInfo = allGasData.find(g =>
+                  String(g.chain || '').toLowerCase() === String(chainName || '').toLowerCase()
+                );
+                if (gasInfo && gasInfo.tokenPrice) {
+                  const gasFeeUsd = (gasFeeWei / 1e18) * gasInfo.tokenPrice;
+                  if (Number.isFinite(gasFeeUsd) && gasFeeUsd > 0) FeeSwap = gasFeeUsd;
+                }
+              }
+            }
           } else if (response.gas && response.gas.usdValue) {
             const gasUsd = parseFloat(response.gas.usdValue || 0);
             if (Number.isFinite(gasUsd) && gasUsd > 0) FeeSwap = gasUsd;
@@ -952,29 +978,12 @@
         const data = response.data[0];
         const amount_out = parseFloat(data.toTokenAmount) / Math.pow(10, des_output);
 
-        // Parse gas fee dari estimateGasFee (dalam wei) dan konversi ke USD
+        // estimateGasFee dari OKX API adalah nilai USD langsung
         let FeeSwap = getFeeSwap(chainName);
         try {
-          const gasWei = parseFloat(data.estimateGasFee || 0);
-          if (gasWei > 0) {
-            // Get native token price from gas data
-            const allGasData = (typeof getFromLocalStorage === 'function')
-              ? getFromLocalStorage("ALL_GAS_FEES")
-              : null;
-
-            if (allGasData) {
-              const gasInfo = allGasData.find(g =>
-                String(g.chain || '').toLowerCase() === String(chainName || '').toLowerCase()
-              );
-
-              if (gasInfo && gasInfo.nativeTokenPrice) {
-                // Convert wei to native token units (divide by 1e18) then multiply by token price
-                const gasUSD = (gasWei / 1e18) * gasInfo.nativeTokenPrice;
-                if (Number.isFinite(gasUSD) && gasUSD > 0) {
-                  FeeSwap = gasUSD;
-                }
-              }
-            }
+          const feeUsd = parseFloat(data.estimateGasFee || 0);
+          if (Number.isFinite(feeUsd) && feeUsd > 0) {
+            FeeSwap = feeUsd;
           }
         } catch (e) {
           // Fallback to default gas fee if calculation fails
@@ -2054,6 +2063,190 @@
   // Create filtered C98 strategies
   dexStrategies['c98-okx']    = createFilteredC98Strategy('okx', 'OKX');      // ✅ OKX via Coin98 Superlink
   dexStrategies['c98-matcha'] = createFilteredC98Strategy('0x',  'MATCHA');   // ✅ Matcha/0x via Coin98 Superlink
+
+  // =============================
+  // Krystal Filtered Strategy Factory
+  // =============================
+  /**
+   * Factory function untuk Krystal allRates API (filter per platform)
+   *
+   * Endpoint: GET https://api.krystal.app/{chainName}/v2/swap/allRates
+   * Params: src, srcAmount, dest, platformWallet
+   *
+   * Response: { rates: [{ platform, amount, estimatedGas, ... }] }
+   * - platform: "OKX Dex" | "KyberSwap" | "Uniswap V3" | ...
+   * - amount: output in base units (integer string, NOT wei — uses token decimals)
+   * - estimatedGas: gas units estimate
+   *
+   * @param {string} platformName - Platform name to filter (e.g. "OKX Dex", "KyberSwap")
+   * @param {string} dexTitle     - Display name (e.g. 'OKX', 'KYBER')
+   */
+  function createFilteredKrystalStrategy(platformName, dexTitle) {
+    const PLATFORM_WALLET = '0x168E4c3AC8d89B00958B6bE6400B066f0347DDc9';
+
+    return {
+      buildRequest: ({ chainName, sc_input_in, sc_output_in, amount_in_big }) => {
+        const chain = String(chainName || '').toLowerCase();
+        const params = new URLSearchParams({
+          src:            sc_input_in,
+          srcAmount:      String(amount_in_big),
+          dest:           sc_output_in,
+          platformWallet: PLATFORM_WALLET
+        });
+
+        return {
+          url: `https://api.krystal.app/${chain}/v2/swap/allRates?${params.toString()}`,
+          method: 'GET',
+          headers: {}
+        };
+      },
+
+      parseResponse: (response, { des_output, chainName }) => {
+        if (!Array.isArray(response?.rates) || response.rates.length === 0) {
+          throw new Error(`Krystal-${dexTitle}: No rates returned`);
+        }
+
+        // Filter by platform name (case-insensitive partial match)
+        const match = response.rates.find(r =>
+          String(r.platform || '').toLowerCase().includes(platformName.toLowerCase())
+        );
+
+        if (!match) {
+          throw new Error(`Krystal-${dexTitle}: Platform "${platformName}" not found in rates`);
+        }
+
+        const amount_out = parseFloat(match.amount) / Math.pow(10, des_output);
+        if (!Number.isFinite(amount_out) || amount_out <= 0) {
+          throw new Error(`Krystal-${dexTitle}: Invalid amount: ${match.amount}`);
+        }
+
+        // Gas fee: use estimatedGas + gwei from ALL_GAS_FEES → USD
+        let FeeSwap = getFeeSwap(chainName);
+        try {
+          const gasUnits = parseFloat(match.estimatedGas || match.estGasConsumed || 0);
+          if (gasUnits > 0) {
+            const allGasData = (typeof getFromLocalStorage === 'function')
+              ? getFromLocalStorage('ALL_GAS_FEES') : null;
+            if (allGasData) {
+              const gasInfo = allGasData.find(g =>
+                String(g.chain || '').toLowerCase() === String(chainName || '').toLowerCase()
+              );
+              if (gasInfo && gasInfo.gwei && gasInfo.tokenPrice) {
+                const feeUsd = (gasUnits * gasInfo.gwei * gasInfo.tokenPrice) / 1e9;
+                if (Number.isFinite(feeUsd) && feeUsd > 0) FeeSwap = feeUsd;
+              }
+            }
+          }
+        } catch (_) { }
+
+        console.log(`[Krystal-${dexTitle}] platform="${match.platform}", amount=${amount_out.toFixed(6)}, gas=$${FeeSwap.toFixed(4)}`);
+
+        return {
+          amount_out,
+          FeeSwap,
+          dexTitle,
+          routeTool: `${dexTitle} via KRYSTAL`
+        };
+      }
+    };
+  }
+
+  dexStrategies['krystal-kyber'] = createFilteredKrystalStrategy('KyberSwap', 'KYBER');
+  dexStrategies['krystal-okx']   = createFilteredKrystalStrategy('OKX Dex',   'OKX');
+
+  // =============================
+  // Bungee Filtered Strategy Factory
+  // =============================
+  /**
+   * Factory function untuk Bungee Protocol API (filter manualRoutes per DEX)
+   *
+   * Endpoint: GET https://dedicated-backend.bungee.exchange/api/v1/bungee/quote
+   * Headers: x-api-key, affiliate, Content-Type
+   *
+   * Response: { result: { manualRoutes: [{ routeDetails: { name }, output: { amount }, gasFee: { feeInUsd } }] } }
+   * - routeDetails.name: "0x" (Matcha), "Kyberswap" (Kyber), "OpenOcean", etc.
+   * - output.amount: output dalam base units token (bagi 10^des_output)
+   * - gasFee.feeInUsd: gas fee langsung dalam USD ✅
+   *
+   * @param {string} routeName - routeDetails.name to filter (e.g. "0x", "Kyberswap")
+   * @param {string} dexTitle  - Display name (e.g. 'MATCHA', 'KYBER')
+   */
+  function createFilteredBungeeStrategy(routeName, dexTitle) {
+    return {
+      buildRequest: ({ sc_input_in, sc_output_in, amount_in_big, codeChain, SavedSettingData }) => {
+        const userAddr = SavedSettingData?.walletMeta || '0x0000000000000000000000000000000000000000';
+        const apiKey = (typeof getRandomApiKeyBungee === 'function') ? getRandomApiKeyBungee() : '';
+        const affiliate = (typeof root.BUNGEE_AFFILIATE !== 'undefined') ? root.BUNGEE_AFFILIATE : '';
+
+        const params = new URLSearchParams({
+          userAddress:              userAddr,
+          originChainId:            String(codeChain),
+          destinationChainId:       String(codeChain),
+          inputAmount:              String(amount_in_big),
+          inputToken:               sc_input_in,
+          outputToken:              sc_output_in,
+          enableManual:             'true',
+          receiverAddress:          userAddr,
+          refuel:                   'false',
+          excludeBridges:           'cctp',
+          useInbox:                 'false',
+          enableMultipleAutoRoutes: 'true'
+        });
+
+        return {
+          url: `https://dedicated-backend.bungee.exchange/api/v1/bungee/quote?${params.toString()}`,
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'x-api-key':    apiKey,
+            'affiliate':    affiliate
+          }
+        };
+      },
+
+      parseResponse: (response, { des_output, chainName }) => {
+        if (!response?.result) throw new Error(`Bungee-${dexTitle}: Invalid response structure`);
+
+        const manualRoutes = response.result.manualRoutes;
+        if (!Array.isArray(manualRoutes) || manualRoutes.length === 0) {
+          throw new Error(`Bungee-${dexTitle}: No manualRoutes in response`);
+        }
+
+        // Filter by routeDetails.name (case-insensitive partial match)
+        const match = manualRoutes.find(r =>
+          String(r.routeDetails?.name || '').toLowerCase().includes(routeName.toLowerCase())
+        );
+
+        if (!match) {
+          throw new Error(`Bungee-${dexTitle}: Route "${routeName}" not found. Available: ${manualRoutes.map(r => r.routeDetails?.name).join(', ')}`);
+        }
+
+        const amount_out = parseFloat(match.output?.amount) / Math.pow(10, des_output);
+        if (!Number.isFinite(amount_out) || amount_out <= 0) {
+          throw new Error(`Bungee-${dexTitle}: Invalid output amount: ${match.output?.amount}`);
+        }
+
+        // gasFee.feeInUsd sudah dalam USD langsung
+        let FeeSwap = getFeeSwap(chainName);
+        try {
+          const feeUsd = parseFloat(match.gasFee?.feeInUsd || 0);
+          if (Number.isFinite(feeUsd) && feeUsd > 0) FeeSwap = feeUsd;
+        } catch (_) { }
+
+        console.log(`[Bungee-${dexTitle}] route="${match.routeDetails?.name}", amount=${amount_out.toFixed(6)}, gas=$${FeeSwap.toFixed(4)}`);
+
+        return {
+          amount_out,
+          FeeSwap,
+          dexTitle,
+          routeTool: `${dexTitle} via BUNGEE`
+        };
+      }
+    };
+  }
+
+  dexStrategies['bungee-matcha'] = createFilteredBungeeStrategy('0x',        'MATCHA');
+  dexStrategies['bungee-kyber']  = createFilteredBungeeStrategy('Kyberswap', 'KYBER');
 
   // =============================
   // DZAP Filtered Strategy Factory - DZAP as REST API Provider
